@@ -1,0 +1,704 @@
+# Copyright (c) 2026 ConcurAI
+# SPDX-License-Identifier: BUSL-1.1
+# The eMemory stack — the compose a customer runs.
+#
+# PULL, NEVER BUILD: every service runs from a published image and
+# nothing here builds. Our own images come from the GitHub Container Registry
+# (ghcr.io/everythingmemory/<name>), public, amd64 and arm64, each pinned
+# `tag@sha256:<digest>` by scripts/pin-images.sh when a release is cut
+# (docs/install.md "Cutting a release"). Nothing mounts code from the checkout
+# (configuration in conf/ is mounted, read-only). Building the images from
+# this checkout instead is the overlay docker-compose.build.yml; mounting code
+# for hot reload is our own dev overlay, docker-compose.estate.yml.
+#
+# NO HOT RELOAD: nothing here runs with `--reload`, so a start the
+# engine refuses stops the container rather than leaving it up and serving
+# nothing. File-watching reload is a development behaviour; on our own mounted
+# local stack it is the overlay docker-compose.estate.yml.
+#
+# Usage:
+#   ln -s local.env .env    # once — compose auto-loads .env for ${VAR} substitution;
+#                           # without it `up` refuses: EMBEDDING_MODEL,
+#                           # EMBEDDING_BASE_URL, POSTGRES_PASSWORD,
+#                           # REDIS_PASSWORD and AUTH_ENABLED are required
+#                           # (`:?`), and env_file
+#                           # alone is invisible to that check
+#   docker compose up -d    # no sourcing needed
+#   docker compose down
+#
+# CLOSED BY DEFAULT. The engine's 8765 is the one published port,
+# and it binds 127.0.0.1 only: nothing off this machine reaches it. AUTH_ENABLED
+# is stated in local.env, never defaulted here — the template ships `false` so
+# a first run needs no key, which is safe only because of that loopback bind.
+# With AUTH_ENABLED=true every caller but /health carries a client key whose
+# SHA-256 is in API_KEY_HASH_LIST, and the engine refuses to boot with auth on
+# and neither a key nor OAuth. Reaching the engine from other machines is the
+# overlay docker-compose.open.yml, which also forces auth on.
+# The database, the queue and the plugins publish nothing — the engine reaches
+# them by service name on this stack's own network.
+
+services:
+  ememory-api:
+    image: ghcr.io/everythingmemory/core:1.2.11@sha256:1ecb9392d0d88e7673bac521273691663af079a85efc4af85f964b77e9a12ca6
+    restart: unless-stopped
+    # Memory limit: about twice this container's peak on a full rebuild from
+    # the archive (47,934 records, 2026-10-14). A runaway is killed and
+    # restarted without taking its neighbours down.
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    env_file:
+      - local.env
+    environment:
+      - PYTHONPATH=/app
+      - CONF_DIR=/app/conf
+      # REQUIRED, no default — `up` refuses without them. Compose
+      # reads them from .env, which is why the header links local.env to it.
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:?EMBEDDING_MODEL is required - set it in local.env (linked to .env, see the header of this file)}
+      - EMBEDDING_BASE_URL=${EMBEDDING_BASE_URL:?EMBEDDING_BASE_URL is required - set it in local.env (linked to .env, see the header of this file)}
+      # AUTH IS STATED, NEVER DEFAULTED: `up` refuses without it, so
+      # no missing line can turn auth off — or on — by accident.
+      - AUTH_ENABLED=${AUTH_ENABLED:?AUTH_ENABLED is required - true or false; set it in local.env (linked to .env, see the header of this file)}
+      # The client keys' hashes, passed through as written and never
+      # defaulted. Compose cannot require them only when auth is on, so the
+      # ENGINE does: auth on with neither a key nor OAuth refuses the boot.
+      - API_KEY_HASH_LIST=${API_KEY_HASH_LIST}
+      - DB_MODE=postgresql
+      - POSTGRES_HOST=ememory-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:?POSTGRES_DB is required - set it in local.env (linked to .env, see the header of this file)}
+      - POSTGRES_USER=${POSTGRES_USER:?POSTGRES_USER is required - set it in local.env (linked to .env, see the header of this file)}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in local.env (linked to .env, see the header of this file)}
+      - REDIS_HOST=ememory-redis
+      - REDIS_PORT=6380
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required - set it in local.env (linked to .env, see the header of this file)}
+      # Two queues: archive jobs ride their own queue, drained by
+      # ememory-worker-archive. The flag must be identical on the app and BOTH
+      # workers — this stack defines the second worker, so it is on here.
+      - ARCHIVE_QUEUE_ENABLED=${ARCHIVE_QUEUE_ENABLED:-true}
+    ports:
+      # LOOPBACK ONLY: the template runs auth off for a first try,
+      # so the port must not reach the network. docker-compose.open.yml is
+      # the deliberate step that publishes it beyond this machine.
+      # The host port is EMEMORY_PORT (default 8765), so a second stack on this
+      # machine can take another one.
+      - "127.0.0.1:${EMEMORY_PORT:-8765}:8765"
+    volumes:
+      # Configuration only — the code is in the image. A development stack can mount
+      # the code too (docker-compose.estate.yml).
+      - ./conf:/app/conf:ro
+    depends_on:
+      ememory-postgres:
+        condition: service_healthy
+      ememory-redis:
+        condition: service_healthy
+      # The archive's bucket exists before the first write or restore sweep.
+      archive-bucket:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8765/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    entrypoint: ["python", "-m", "uvicorn"]
+    command: ["core.main:app", "--host", "0.0.0.0", "--port", "8765", "--timeout-graceful-shutdown", "5", "--log-config", "/app/conf/logging.yaml"]
+
+  ememory-postgres:
+    # PERCONA'S RELEASE IMAGE, EXACT VERSION AND DIGEST: the
+    # `percona/` namespace, not the `perconalab/` lab builds; the tag names the
+    # release (Percona Server for PostgreSQL 17.11.1, pg_tde 2.2, pgvector
+    # 0.8.6), the digest is the multi-arch index, so amd64 and arm64 resolve
+    # from this one line. The suite's throwaway harness pins the same one
+    # (`engine/tests/pg_harness.py`), so local and CI run one build.
+    #
+    # pgvector 0.8 IS A FLOOR, not a preference: every semantic search sets
+    # `hnsw.iterative_scan`, which arrived in 0.8.0, and `hnsw` is a reserved
+    # configuration prefix, so on an older build the search raises rather than
+    # ignoring it. The engine refuses to boot below the floor and says so
+    # (`core.embedding.spaces.assert_pgvector_floor`).
+    image: percona/percona-distribution-postgresql:17.11.1-4@sha256:32a2c3ce3147ff269a5b0d56e1ae28823131b7a98a95a67d67723d4e78017a94
+    restart: unless-stopped
+    # ENCRYPTED AT REST: Percona's pg_tde, preloaded here and set up
+    # once at creation by conf/init-tde.sql — a file keyring in the
+    # ememory_tde_keys volume, `tde_heap` the default access method, WAL
+    # encrypted. The key volume must be writable by postgres (uid 26), and a
+    # fresh named volume is root's: the container starts as root only to hand
+    # /tde_keys to postgres, then the image's own entrypoint drops to postgres
+    # as it always does.
+    user: root
+    entrypoint: ["sh", "-c", "chown postgres:postgres /tde_keys && chmod 700 /tde_keys && exec /entrypoint.sh \"$$@\"", "entrypoint"]
+    # Postgres sizes itself through its own settings, declared here so a stack's
+    # memory is a stated number; the limit is only a backstop above them.
+    command: ["postgres", "-c", "shared_preload_libraries=pg_tde",
+              "-c", "shared_buffers=128MB", "-c", "work_mem=4MB",
+              "-c", "maintenance_work_mem=64MB", "-c", "max_connections=100"]
+    mem_limit: 1536m
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    env_file:
+      - local.env
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:?POSTGRES_DB is required - set it in local.env (linked to .env, see the header of this file)}
+      - POSTGRES_USER=${POSTGRES_USER:?POSTGRES_USER is required - set it in local.env (linked to .env, see the header of this file)}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in local.env (linked to .env, see the header of this file)}
+      # UTF8, stated: unset, initdb takes the image's locale and
+      # made the fleet's databases SQL_ASCII. Read once, when the database is
+      # created; the suite's throwaway Postgres uses the same arguments
+      # (`engine/tests/pg_harness.py`).
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8 --locale=C
+    # NO PUBLISHED PORT: the engine and the workers dial it by service name at
+    # 5432 on this stack's network. A host port for an operator's own tooling
+    # binds loopback only, in an overlay (docker-compose.estate.yml).
+    volumes:
+      # Percona PG image keeps PGDATA at /data/db (NOT the vanilla
+      # /var/lib/postgresql/data) — mounting the wrong path silently stored
+      # data in the container layer: gone on every recreate. Cloud masked it
+      # via sync_sweep re-hydration from Spaces; local stacks lost everything.
+      - ememory_postgres_data:/data/db
+      # THE KEY VOLUME — the file keyring pg_tde encrypts with.
+      # It only unlocks the database, which is a cache rebuilt from the
+      # archive, so the two live and die together: losing it loses
+      # the database, and the database comes back from the archive.
+      - ememory_tde_keys:/tde_keys
+      # Run in name order on an empty data directory: encryption first, so
+      # nothing is created before it.
+      - ./conf/init-tde.sql:/docker-entrypoint-initdb.d/00-init-tde.sql:ro
+      - ./conf/init-pgvector.sql:/docker-entrypoint-initdb.d/10-init-pgvector.sql:ro
+    healthcheck:
+      # The container's own POSTGRES_USER / POSTGRES_DB (`$$` defers to its
+      # shell), the values the database was created with — required above.
+      # HEALTHY MEANS ENCRYPTED: ready, AND `tde_heap` the default access method,
+      # AND pg_tde in the stack's database. A database that came up without its
+      # encryption (an init that failed, then a restart that skipped init) is
+      # never healthy, so the engine — which waits for healthy — never starts
+      # against it.
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\" && [ \"$$(psql -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\" -tAc 'SHOW default_table_access_method')\" = tde_heap ] && [ \"$$(psql -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\" -tAc \"SELECT count(*) FROM pg_extension WHERE extname = 'pg_tde'\")\" = 1 ]"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      # The first start runs initdb and the TDE init before it can answer.
+      start_period: 30s
+
+  # THE ARCHIVE STORE (v48) — named with a hyphen: the S3 client refuses an
+  # endpoint host with an underscore. The durable copy of everything the engine
+  # holds, on this machine's disk: SeaweedFS (master, volume, filer and the S3
+  # gateway in one process), reached by the engine on this stack's network at
+  # http://archive-store:8333 and published nowhere. Postgres is the live
+  # index, rebuildable from it. Pointing S3_ENDPOINT_URL at Spaces, AWS or
+  # MinIO instead moves the archive there; this service then sits idle.
+  # It accepts exactly one identity, local.env's S3 key pair, written to a
+  # config file at start. Its objects are encrypted with ARCHIVE_KEY:
+  # keep that key APART from the archive (a password manager), never beside it.
+  archive-store:
+    # SeaweedFS 3.97, by tag and digest — the image the archive harness
+    # (docker-compose.peers.archive.yml) runs. Bump only in an upgrade cycle.
+    image: chrislusf/seaweedfs:3.97@sha256:bb05d66d2963b1cc48073190781c3dd29e2c4c88a2ae2986bf58e38c86d89c6e
+    restart: unless-stopped
+    # Not yet measured on a corpus.
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+    # Passed through as written; an empty one is refused below, at start.
+    environment:
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - ARCHIVE_DIR=${ARCHIVE_DIR:?ARCHIVE_DIR is required - the host folder that holds the encrypted archive, an absolute path; create it and set it in local.env (docs/install.md)}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        case "$$ARCHIVE_DIR/" in [!/]*|*/./*|*/../*) echo "ARCHIVE_DIR must be an absolute path with no . or .. - set it in local.env (docs/install.md)" >&2; exit 1 ;; esac &&
+        : "$${S3_ACCESS_KEY:?S3_ACCESS_KEY is required - set it in local.env (linked to .env, see the header of this file)}" &&
+        : "$${S3_SECRET_KEY:?S3_SECRET_KEY is required - set it in local.env (linked to .env, see the header of this file)}" &&
+        printf '{"identities":[{"name":"ememory","credentials":[{"accessKey":"%s","secretKey":"%s"}],"actions":["Admin","Read","Write","List","Tagging"]}]}'
+        "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY" > /tmp/s3.json &&
+        exec weed server -ip=archive-store -ip.bind=0.0.0.0 -dir=/data -master.volumeSizeLimitMB=64
+        -s3 -s3.port=8333 -s3.config=/tmp/s3.json
+    # THE ARCHIVE FOLDER — a host folder the customer names
+    # (ARCHIVE_DIR), bind-mounted: no `docker compose down -v` touches it, and
+    # the customer backs it up and moves it with their own tools, on any disk.
+    # SeaweedFS writes it as root (the image sets no user). It must exist (the
+    # install step makes it): a mistyped path is refused, never created empty.
+    volumes:
+      - type: bind
+        source: "${ARCHIVE_DIR:?ARCHIVE_DIR is required - the host folder that holds the encrypted archive, an absolute path; create it and set it in local.env (docs/install.md)}"
+        target: /data
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://archive-store:8333/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # Makes the archive's bucket (S3_BUCKET) if it is not there yet, then exits.
+  # The engine does not create buckets, and does not start until this has
+  # succeeded.
+  #
+  # THE ARCHIVE'S SECRETS ARE REQUIRED HERE, AT START. The store's key pair
+  # and ARCHIVE_KEY (every archive object is encrypted with it) must be
+  # set in local.env: an empty one stops this service with a message naming
+  # it, and the engine never starts. Checked at start rather than by compose
+  # (`${VAR:?}`) because compose checks every service of every file, and the
+  # estate overlay — which turns the archive store off — must not need them.
+  # The key is only tested for presence here; nothing reads it.
+  archive-bucket:
+    image: chrislusf/seaweedfs:3.97@sha256:bb05d66d2963b1cc48073190781c3dd29e2c4c88a2ae2986bf58e38c86d89c6e
+    restart: "no"
+    environment:
+      - S3_BUCKET=${S3_BUCKET}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - ARCHIVE_KEY=${ARCHIVE_KEY}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        : "$${S3_BUCKET:?S3_BUCKET is required - set it in local.env (linked to .env, see the header of this file)}" &&
+        : "$${S3_ACCESS_KEY:?S3_ACCESS_KEY is required - set it in local.env (linked to .env, see the header of this file)}" &&
+        : "$${S3_SECRET_KEY:?S3_SECRET_KEY is required - set it in local.env (linked to .env, see the header of this file)}" &&
+        : "$${ARCHIVE_KEY:?ARCHIVE_KEY is required - every archive object is encrypted with it; set it in local.env (linked to .env, see the header of this file)}" &&
+        { echo "s3.bucket.create -name $$S3_BUCKET" | weed shell -master=archive-store:9333 -filer=archive-store:8888 ; } &&
+        echo 'fs.ls /buckets' | weed shell -master=archive-store:9333 -filer=archive-store:8888 | grep -qw "$$S3_BUCKET"
+    depends_on:
+      archive-store:
+        condition: service_healthy
+
+  ememory-redis:
+    # Pinned to the digest `redis:7-alpine` resolved to locally;
+    # bump only in an upgrade cycle.
+    image: redis:7-alpine@sha256:8b81dd37ff027bec4e516d41acfbe9fe2460070dc6d4a4570a2ac5b9d59df065
+    # A PASSWORD, ALWAYS: the queue holds every job the engine
+    # runs, so nothing on this stack's network reaches it without
+    # REDIS_PASSWORD — the engine and every worker carry it. Written to a
+    # config file at start, never onto the command line.
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required - set it in local.env (linked to .env, see the header of this file)}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        printf 'requirepass "%s"\n' "$$REDIS_PASSWORD" > /tmp/redis.conf &&
+        exec redis-server /tmp/redis.conf --port 6380 --save "" --maxmemory 256mb --maxmemory-policy noeviction
+    restart: unless-stopped
+    # Redis caps itself (`maxmemory`, `noeviction`: a full queue refuses new jobs
+    # rather than dropping queued ones); the limit is only a backstop above it.
+    mem_limit: 384m
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    healthcheck:
+      # Healthy means it answers the password, not merely that it is up.
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli -p 6380 ping | grep -qx PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # THE GATEWAY SHIPS WITH THE STACK: LiteLLM, configured by
+  # conf/gateway.yaml — the one file a customer edits to choose the embedding
+  # model. As shipped it routes to `local-embed` below, on this machine; the
+  # OpenRouter route is there too, ready as the switch. The engine dials it at
+  # EMBEDDING_BASE_URL=http://gateway:4000/v1. It publishes nothing; the engine
+  # reaches it by service name.
+  #
+  # NO depends_on FROM THE ENGINE: the engine starts without it and embeds when
+  # it answers, so a gateway outage never takes ingest or structural
+  # retrieval down.
+  gateway:
+    # LiteLLM 1.100.0, pinned by index digest. Bump only in an upgrade cycle.
+    image: ghcr.io/berriai/litellm:main-stable@sha256:c8756e7b9a61fe45df2ccb5b781d388c3b2f3a21ef9e4956630caef20f9f03aa
+    restart: unless-stopped
+    # Measured 2026-10-30 on this config (stock LiteLLM 1.100.0, no database):
+    # 794 MiB idle, 821 MiB at the peak of a burst of 2,048 texts (64 requests
+    # of 32, 16 at a time) to the local model. Half again for headroom.
+    mem_limit: 1536m
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    # NO OUTBOUND CALL AT START: `--telemetry False` sends LiteLLM
+    # no usage ping, and LITELLM_LOCAL_MODEL_COST_MAP (below) reads the price
+    # map from the image instead of GitHub. Its tokenizers are bundled.
+    command: ["--config", "/config.yaml", "--host", "0.0.0.0", "--port", "4000", "--telemetry", "False"]
+    # THE PROVIDER KEYS ARE THE GATEWAY'S ALONE: its own env file (from
+    # gateway.env.template, git-ignored), read by no other service — the engine
+    # and its workers never hold a provider key. OPTIONAL: the shipped local
+    # model needs no key, so the stack starts without the file; it is needed
+    # only to switch to a provider route (Docker Compose 2.24 or later).
+    env_file:
+      - path: gateway.env
+        required: false
+    environment:
+      # The cost map from the image, not fetched from GitHub at every start.
+      - LITELLM_LOCAL_MODEL_COST_MAP=True
+    volumes:
+      - ./conf/gateway.yaml:/config.yaml:ro
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # THE LOCAL EMBEDDING MODEL — the shipped default: nothing leaves
+  # this machine and no key is needed. llama.cpp's server with nomic-embed-text
+  # v1.5 (768 dimensions, CPU) built into its image (local-embed/Dockerfile,
+  # the model pinned by checksum), so nothing is downloaded when it starts.
+  # conf/gateway.yaml routes EMBEDDING_MODEL=nomic-embed-text to it. It
+  # publishes nothing; the gateway reaches it by service name.
+  local-embed:
+    image: ghcr.io/everythingmemory/local-embed:1.2.11@sha256:f8131306537663f7fb6bcce24be9ff081e01b0cf448327709d631121f959cef9
+    restart: unless-stopped
+    # The model is 146 MB. Measured 2026-10-30: 81 MiB after the same burst
+    # through the gateway. The ceiling is generous until measured on a corpus.
+    mem_limit: 1g
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # THE CONSOLE — the memory product's own face: a Node backend,
+  # running as non-root on 8080, serving the console and reaching the engine at
+  # `ememory-api:8765` by service name (it needs no settings). KEY MODE: with no
+  # login proxy in front, the console signs in with a client key — mint a
+  # dedicated one for people (`./e.sh client-key mint`), so it is revoked
+  # without touching any agent. Open http://127.0.0.1:8766/.
+  console:
+    # Built in the console's own repository; pinned here with the rest by
+    # scripts/pin-images.sh. Bump only in an upgrade cycle.
+    image: ghcr.io/everythingmemory/console:1.2.11@sha256:c4b286741e8e27ac623509670ab9d64d39e328ebf2978fce1f385e73dd7b8438
+    restart: unless-stopped
+    # Started after the engine's container exists, so the `ememory-api` name
+    # resolves when the console first looks; the engine being ready is not
+    # needed.
+    depends_on:
+      ememory-api:
+        condition: service_started
+    # The engine it fronts, named here rather than left to the image's
+    # default (which names the service before its rename).
+    # CONSOLE_SESSION_IDLE / CONSOLE_SESSION_MAX from local.env; empty = the
+    # console's defaults (no idle limit; signed out 30 days after sign-in).
+    environment:
+      - CONSOLE_ENGINE_URL=http://ememory-api:8765
+      - CONSOLE_SESSION_IDLE=${CONSOLE_SESSION_IDLE:-}
+      - CONSOLE_SESSION_MAX=${CONSOLE_SESSION_MAX:-}
+    mem_limit: 128m
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+    ports:
+      # LOOPBACK ONLY, like the engine: in key mode it is a door to the
+      # engine's API for whoever holds a key.
+      # CONSOLE_PORT (default 8766), like the engine's; the console listens
+      # on 8080 inside its container.
+      - "127.0.0.1:${CONSOLE_PORT:-8766}:8080"
+    # NO HEALTHCHECK HERE: the image carries its own (HEALTHCHECK), and it has
+    # no wget or curl for one written here to call.
+
+  ememory-worker:
+    image: ghcr.io/everythingmemory/core:1.2.11@sha256:1ecb9392d0d88e7673bac521273691663af079a85efc4af85f964b77e9a12ca6
+    entrypoint: ["python", "-m", "arq", "core.worker.WorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
+    restart: unless-stopped
+    # Memory limit: about twice this container's peak on a full rebuild from
+    # the archive (47,934 records, 2026-10-14). A runaway is killed and
+    # restarted without taking its neighbours down.
+    mem_limit: 1g
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    env_file:
+      - local.env
+    environment:
+      - PYTHONPATH=/app
+      - CONF_DIR=/app/conf
+      # REQUIRED, no default — `up` refuses without them. Compose
+      # reads them from .env, which is why the header links local.env to it.
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:?EMBEDDING_MODEL is required - set it in local.env (linked to .env, see the header of this file)}
+      - EMBEDDING_BASE_URL=${EMBEDDING_BASE_URL:?EMBEDDING_BASE_URL is required - set it in local.env (linked to .env, see the header of this file)}
+      - DB_MODE=postgresql
+      - POSTGRES_HOST=ememory-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:?POSTGRES_DB is required - set it in local.env (linked to .env, see the header of this file)}
+      - POSTGRES_USER=${POSTGRES_USER:?POSTGRES_USER is required - set it in local.env (linked to .env, see the header of this file)}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in local.env (linked to .env, see the header of this file)}
+      - REDIS_HOST=ememory-redis
+      - REDIS_PORT=6380
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required - set it in local.env (linked to .env, see the header of this file)}
+      - WORKER_MAX_JOBS=${WORKER_MAX_JOBS:-1}
+      - ARCHIVE_QUEUE_ENABLED=${ARCHIVE_QUEUE_ENABLED:-true}
+      - RUN_MIGRATIONS=false
+    volumes:
+      # Configuration only — the code is in the image. A development stack can mount
+      # the code too (docker-compose.estate.yml).
+      - ./conf:/app/conf:ro
+    depends_on:
+      ememory-api:
+        condition: service_healthy
+      ememory-redis:
+        condition: service_healthy
+
+  # The archive drain — its own queue, its own process, never a
+  # cron. One sweep tick can enqueue tens of thousands of object-store PUTs;
+  # on the shared queue they took every slot of ememory-worker and arq starts
+  # no cron while all slots are busy, so the sweeps went silent for half an
+  # hour. Same image, same mounts, same env as ememory-worker — only the arq
+  # settings class and the concurrency differ.
+  ememory-worker-archive:
+    image: ghcr.io/everythingmemory/core:1.2.11@sha256:1ecb9392d0d88e7673bac521273691663af079a85efc4af85f964b77e9a12ca6
+    entrypoint: ["python", "-m", "arq", "core.worker.ArchiveWorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
+    restart: unless-stopped
+    # Memory limit: about twice this container's peak on a full rebuild from
+    # the archive (47,934 records, 2026-10-14). A runaway is killed and
+    # restarted without taking its neighbours down.
+    mem_limit: 384m
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    env_file:
+      - local.env
+    environment:
+      - PYTHONPATH=/app
+      - CONF_DIR=/app/conf
+      # REQUIRED, no default — `up` refuses without them. Compose
+      # reads them from .env, which is why the header links local.env to it.
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:?EMBEDDING_MODEL is required - set it in local.env (linked to .env, see the header of this file)}
+      - EMBEDDING_BASE_URL=${EMBEDDING_BASE_URL:?EMBEDDING_BASE_URL is required - set it in local.env (linked to .env, see the header of this file)}
+      - DB_MODE=postgresql
+      - POSTGRES_HOST=ememory-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:?POSTGRES_DB is required - set it in local.env (linked to .env, see the header of this file)}
+      - POSTGRES_USER=${POSTGRES_USER:?POSTGRES_USER is required - set it in local.env (linked to .env, see the header of this file)}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in local.env (linked to .env, see the header of this file)}
+      - REDIS_HOST=ememory-redis
+      - REDIS_PORT=6380
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required - set it in local.env (linked to .env, see the header of this file)}
+      - ARCHIVE_QUEUE_ENABLED=${ARCHIVE_QUEUE_ENABLED:-true}
+      - ARCHIVE_WORKER_MAX_JOBS=${ARCHIVE_WORKER_MAX_JOBS:-10}
+      - RUN_MIGRATIONS=false
+    volumes:
+      # Configuration only — the code is in the image. A development stack can mount
+      # the code too (docker-compose.estate.yml).
+      - ./conf:/app/conf:ro
+    depends_on:
+      ememory-api:
+        condition: service_healthy
+      ememory-redis:
+        condition: service_healthy
+
+  # The maintenance backfill — its own queue, its own process,
+  # never a cron. A sweep queues a whole backlog at once — the tagging sweep
+  # every record owed a tag row — and each job puts a batch of records through
+  # a shared service; on a queue of its own that backlog never takes a slot
+  # from ememory-worker. Same image, same mounts, same env — it reads
+  # conf/plugins.yaml and reaches the plugin_* services on this network like
+  # the other two. It is the ONLY worker that runs task_derive_tags, so the
+  # tag index is not filled without it.
+  ememory-worker-maintenance:
+    image: ghcr.io/everythingmemory/core:1.2.11@sha256:1ecb9392d0d88e7673bac521273691663af079a85efc4af85f964b77e9a12ca6
+    entrypoint: ["python", "-m", "arq", "core.worker.MaintenanceWorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
+    restart: unless-stopped
+    # Memory limit: about twice this container's peak on a full rebuild from
+    # the archive (47,934 records, 2026-10-14). A runaway is killed and
+    # restarted without taking its neighbours down.
+    mem_limit: 384m
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    env_file:
+      - local.env
+    environment:
+      - PYTHONPATH=/app
+      - CONF_DIR=/app/conf
+      # REQUIRED, no default — `up` refuses without them. Compose
+      # reads them from .env, which is why the header links local.env to it.
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:?EMBEDDING_MODEL is required - set it in local.env (linked to .env, see the header of this file)}
+      - EMBEDDING_BASE_URL=${EMBEDDING_BASE_URL:?EMBEDDING_BASE_URL is required - set it in local.env (linked to .env, see the header of this file)}
+      - DB_MODE=postgresql
+      - POSTGRES_HOST=ememory-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:?POSTGRES_DB is required - set it in local.env (linked to .env, see the header of this file)}
+      - POSTGRES_USER=${POSTGRES_USER:?POSTGRES_USER is required - set it in local.env (linked to .env, see the header of this file)}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in local.env (linked to .env, see the header of this file)}
+      - REDIS_HOST=ememory-redis
+      - REDIS_PORT=6380
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required - set it in local.env (linked to .env, see the header of this file)}
+      - ARCHIVE_QUEUE_ENABLED=${ARCHIVE_QUEUE_ENABLED:-true}
+      - MAINTENANCE_WORKER_MAX_JOBS=${MAINTENANCE_WORKER_MAX_JOBS:-5}
+      - RUN_MIGRATIONS=false
+    volumes:
+      # Configuration only — the code is in the image. A development stack can mount
+      # the code too (docker-compose.estate.yml).
+      - ./conf:/app/conf:ro
+    depends_on:
+      ememory-api:
+        condition: service_healthy
+      ememory-redis:
+        condition: service_healthy
+
+  # The front door's ingest — its own queue, its own process, never a cron. A
+  # bulk load queues one task_ingest per record; on the default queue 346k of
+  # them sat in front of every cron tick for hours. Same image, same mounts,
+  # same env — it reaches the plugin_* services and the embedding gateway like
+  # ememory-worker did. It is the ONLY worker that runs task_ingest, so an
+  # asynchronous ingest is not extracted or embedded without it.
+  ememory-worker-ingest:
+    image: ghcr.io/everythingmemory/core:1.2.11@sha256:1ecb9392d0d88e7673bac521273691663af079a85efc4af85f964b77e9a12ca6
+    entrypoint: ["python", "-m", "arq", "core.worker.IngestWorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
+    restart: unless-stopped
+    # Memory limit: ememory-worker's, which ran task_ingest until this worker
+    # took it. Not yet measured at INGEST_WORKER_MAX_JOBS concurrency.
+    mem_limit: 1g
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    env_file:
+      - local.env
+    environment:
+      - PYTHONPATH=/app
+      - CONF_DIR=/app/conf
+      # REQUIRED, no default — `up` refuses without them. Compose
+      # reads them from .env, which is why the header links local.env to it.
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:?EMBEDDING_MODEL is required - set it in local.env (linked to .env, see the header of this file)}
+      - EMBEDDING_BASE_URL=${EMBEDDING_BASE_URL:?EMBEDDING_BASE_URL is required - set it in local.env (linked to .env, see the header of this file)}
+      - DB_MODE=postgresql
+      - POSTGRES_HOST=ememory-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:?POSTGRES_DB is required - set it in local.env (linked to .env, see the header of this file)}
+      - POSTGRES_USER=${POSTGRES_USER:?POSTGRES_USER is required - set it in local.env (linked to .env, see the header of this file)}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in local.env (linked to .env, see the header of this file)}
+      - REDIS_HOST=ememory-redis
+      - REDIS_PORT=6380
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required - set it in local.env (linked to .env, see the header of this file)}
+      - ARCHIVE_QUEUE_ENABLED=${ARCHIVE_QUEUE_ENABLED:-true}
+      - INGEST_WORKER_MAX_JOBS=${INGEST_WORKER_MAX_JOBS:-5}
+      - RUN_MIGRATIONS=false
+    volumes:
+      # Configuration only — the code is in the image. A development stack can mount
+      # the code too (docker-compose.estate.yml).
+      - ./conf:/app/conf:ro
+    depends_on:
+      ememory-api:
+        condition: service_healthy
+      ememory-redis:
+        condition: service_healthy
+
+  # --- Plugins ---
+
+  # chrono — the time dimension through chrono-node (plugins/chrono), and the
+  # stack's ONLY time reader: the shipped profiles read time with it
+  # at ingest (PIPELINE_PROFILE=retrieval_v1) and in the e_timeline question
+  # (TEMPORAL_PROFILE=timeline_v1). Duckling and json_leaf are not in this file
+  #their code stays in plugins/ as a menu option, run by adding
+  # their services in an overlay of your own.
+  chrono-engine:
+    image: ghcr.io/everythingmemory/chrono-engine:1.2.11@sha256:cec927fd8564c017b7264bb9e2664326568c16623d479b0e63c08c2f8aa6de7d
+    restart: unless-stopped
+    # A ceiling: a runaway kills this container and not a neighbour, and the
+    # restart policy brings it back. Not yet measured.
+    mem_limit: 256m
+    memswap_limit: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8000/', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  plugin-chrono:
+    image: ghcr.io/everythingmemory/plugin-chrono:1.2.11@sha256:e0ed13dd4b518c83b4046ad73537710cd67605c71d03876a7228b9e69dfd579c
+    restart: unless-stopped
+    # Not yet measured.
+    mem_limit: 128m
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    environment:
+      - CHRONO_URL=http://chrono-engine:8000/parse
+    depends_on:
+      chrono-engine:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    command: ["uvicorn", "chrono_plugin.app:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  plugin-wordnet:
+    image: ghcr.io/everythingmemory/plugin-wordnet:1.2.11@sha256:d5f6056536cd44fc6f8a8e05163fa697936df6568435f565899fb0e8d090d1d5
+    restart: unless-stopped
+    # Memory limit: about twice this container's peak on a full rebuild from
+    # the archive (47,934 records, 2026-10-14). A runaway is killed and
+    # restarted without taking its neighbours down.
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    command: ["uvicorn", "wordnet_plugin.app:app", "--host", "0.0.0.0", "--port", "8000"]
+
+volumes:
+  ememory_postgres_data:
+    driver: local
+  ememory_tde_keys:
+    driver: local
+
+# TWO STACKS ON ONE MACHINE: give the second its own project name (`-p`), its
+# own EMEMORY_NETWORK, EMEMORY_PORT and CONSOLE_PORT. No container here has a
+# fixed name — compose names each one after its project — so two projects never
+# collide on a name. Images built with docker-compose.build.yml keep fixed
+# local tags (`everythingmemory_core`, …) shared by every stack on the
+# machine: never `--build` a different checkout beside a live stack — its
+# build retags the images the live one recreates from.
+#
+# THE STACK'S OWN NETWORK, NAMED. Every service rides the project's default
+# network, which compose creates and removes with the stack — a clean machine
+# needs nothing. It carries a fixed name (EMEMORY_NETWORK, default `ememory`)
+# so Folder Intake (docker-compose.folder.yml, its own project) can join it to
+# reach the engine; two stacks on one machine give it two names. Joining the
+# shared `estate` network instead is the overlay docker-compose.estate.yml.
+networks:
+  default:
+    name: ${EMEMORY_NETWORK:-ememory}

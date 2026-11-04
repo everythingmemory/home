@@ -1,0 +1,73 @@
+# Centralized logging configuration for all entry points:
+#   main.py (FastAPI), cli.py, runner.py, worker.py
+#
+# Loaded by core.log_setup.configure_logging().
+# LOG_LEVEL env var controls root verbosity (default: INFO).
+
+version: 1
+disable_existing_loggers: false
+
+filters:
+  call_id:
+    (): core.call_id.CallIdFilter
+  failed_requests_only:
+    (): core.log_setup.FailedRequestsOnly
+
+formatters:
+  standard:
+    #format: "[%(asctime)s] %(call_id)s %(levelname)s:%(name)s:%(message)s"
+    format: "%(asctime)s  %(call_id)-10s %(levelname)-6s %(module)-30s %(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: standard
+    stream: ext://sys.stderr
+    filters: [call_id]
+
+root:
+  # Level is overridden at load time from LOG_LEVEL env var
+  level: INFO
+  handlers: [console]
+
+loggers:
+  # Uvicorn: use our handler/format, prevent duplicate output
+  uvicorn:
+    handlers: [console]
+    propagate: false
+  uvicorn.error:
+    handlers: [console]
+    propagate: false
+  uvicorn.access:
+    # Failed requests only (status >= 400): a 401 or 500 keeps its line, a
+    # 200 writes none.
+    filters: [failed_requests_only]
+    handlers: [console]
+    propagate: false
+
+  # Arq: use root handler, prevent Arq's own handler from duplicating
+  arq:
+    handlers: [console]
+    propagate: false
+  arq.worker:
+    # WARNING, not INFO: silences arq's per-job framework lines
+    # (→ cron:task_x() / ← cron:task_x ●) that fire for every sweep on
+    # every tick. Per-run visibility is NOT lost — the sweep tasks log
+    # their own work conditionally via core.tasks at INFO (e.g.
+    # "[sweep] found N missing embeddings")
+    # and all failures at WARNING. Do not flip back to INFO (see adef786,
+    # which raised it before tasks had their own logging — no longer needed).
+    level: WARNING
+
+  # Suppress noisy third-party loggers
+  httpx:
+    level: WARNING
+  httpcore:
+    level: WARNING
+  alembic.runtime.plugins:
+    level: WARNING
+  hpack:
+    level: WARNING
+  core.middleware:
+    level: WARNING

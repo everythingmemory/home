@@ -1,0 +1,42 @@
+# Default access model — the standing fallback for an unconfigured (standalone)
+# instance. access_model.get_model() loads this when the ledger has no agent
+# profiles yet.
+#
+# The DEFAULT profile is `restricted`, deliberately: the
+# default only ever catches a caller that did not name a profile, and the
+# unnamed caller is exactly who gets the least-privilege fence. Any real
+# agent names its profile; anyone wanting `open` asks for `open`. (`open` as
+# the default was demo-era ergonomics — and a package policy carrying
+# `default_profile:` once silently seized the deployment default, which is
+# what retired the key from package content.)
+#
+# Precedence: an uploaded policy (a snapshot written to the ledger with profiles)
+# always wins. Override this baked default per-deployment by placing an
+# agents.yaml in CONF_OVERRIDE_DIR — same mechanism as cron.yaml / logging.yaml.
+#
+# `builtin: true` marks a member as the FLOOR: every boot reconciles it, so an
+# engine whose policy was authored before the member existed still gains it (the
+# `builtins` policy — see services/policy.ensure_builtins). Opt-in on purpose:
+# reconciling everything here would resurrect members an operator deliberately
+# dropped, and would hand `open` (write-any-lane) back to an engine that dropped
+# it. A member is floor only when this file says so.
+default_agent_profile: restricted
+lanes:
+  default:
+    vocabulary: open
+    allowed_labels: null
+    builtin: true          # floor — the lane every profile below calls home
+agent_profiles:
+  open:
+    home_lane: default
+    can_read_any_lane: true
+    can_write_any_lane: true
+    enabled: true
+    # deliberately NOT floor: `open` writes any lane. An engine without it
+    # dropped it on purpose; only an operator hands it back.
+  restricted:
+    home_lane: default
+    can_read_any_lane: true
+    can_write_any_lane: false
+    enabled: true
+    builtin: true          # floor — the least-privilege fence a vehicle runs on

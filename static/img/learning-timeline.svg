@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400" width="960" height="400" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="960" height="400" rx="16" fill="#140a26"/>
+
+  <text x="480" y="40" text-anchor="middle" font-size="21" font-weight="800" fill="#ffffff">🧠 Everything Memory — Learning in Time</text>
+
+  <!-- knowledge connections (solid) -->
+  <g fill="none" stroke="#4cc4e0" stroke-width="2.4" stroke-opacity="0.85">
+    <path d="M130,223 C200,183 245,148 300,168"/>
+    <path d="M300,168 C360,203 415,228 470,226"/>
+    <path d="M130,223 C250,298 360,288 470,226"/>
+    <path d="M470,226 C540,200 590,190 650,183"/>
+    <path d="M650,183 C720,210 775,233 830,250"/>
+  </g>
+
+  <!-- learning back-links (dashed) -->
+  <path d="M650,183 C500,58 280,68 132,200" fill="none" stroke="#f87171" stroke-width="2.2" stroke-dasharray="6 5"/>
+  <text x="395" y="78" text-anchor="middle" font-size="12" font-weight="700" fill="#f87171">correction supersedes the earlier fact</text>
+
+  <path d="M830,250 C730,314 570,310 472,250" fill="none" stroke="#34d399" stroke-width="2.2" stroke-dasharray="6 5"/>
+  <text x="650" y="324" text-anchor="middle" font-size="12" font-weight="700" fill="#34d399">adjustment evolves the earlier fact</text>
+
+  <!-- nodes -->
+  <g stroke="#160d27" stroke-width="2">
+    <circle cx="130" cy="223" r="22" fill="#a78bfa"/>
+    <circle cx="300" cy="168" r="22" fill="#a78bfa"/>
+    <circle cx="470" cy="226" r="22" fill="#a78bfa"/>
+    <circle cx="650" cy="183" r="22" fill="#ef4444"/>
+    <circle cx="830" cy="250" r="22" fill="#22c55e"/>
+  </g>
+
+  <!-- node labels -->
+  <g font-size="13" font-weight="700" text-anchor="middle">
+    <text x="130" y="188" fill="#ffffff">recorded</text>
+    <text x="300" y="133" fill="#ffffff">recorded</text>
+    <text x="470" y="266" fill="#ffffff">recorded</text>
+    <text x="650" y="148" fill="#fca5a5">correction</text>
+    <text x="830" y="288" fill="#86efac">adjustment</text>
+  </g>
+
+  <!-- time axis -->
+  <defs>
+    <marker id="t-arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#c4b5fd"/>
+    </marker>
+  </defs>
+  <line x1="90" y1="350" x2="880" y2="350" stroke="#c4b5fd" stroke-width="1.6" marker-end="url(#t-arrow)"/>
+  <g stroke="#c4b5fd" stroke-width="1.4">
+    <line x1="130" y1="345" x2="130" y2="355"/>
+    <line x1="300" y1="345" x2="300" y2="355"/>
+    <line x1="470" y1="345" x2="470" y2="355"/>
+    <line x1="650" y1="345" x2="650" y2="355"/>
+    <line x1="830" y1="345" x2="830" y2="355"/>
+  </g>
+  <text x="894" y="354" font-size="12" font-weight="700" fill="#c4b5fd">time</text>
+  <text x="480" y="376" text-anchor="middle" font-size="12" fill="#c4b5fd">left → right is time: facts are recorded, then later corrected or adjusted</text>
+</svg>

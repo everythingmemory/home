@@ -1,0 +1,12 @@
+{
+  "name": "ememory-core",
+  "version": "1.0.0",
+  "description": "Everything Memory (eMemory) for Claude Code: skills, an orientation agent and session hooks for storing, finding and correcting knowledge with provenance in an eMemory stack.",
+  "author": {
+    "name": "ConcurAI"
+  },
+  "homepage": "https://github.com/everythingmemory/home",
+  "repository": "https://github.com/everythingmemory/home",
+  "license": "Apache-2.0",
+  "keywords": ["memory", "mcp", "knowledge", "provenance"]
+}

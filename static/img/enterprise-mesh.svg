@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 408" width="960" height="408" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="960" height="408" rx="16" fill="#140a26"/>
+  <defs>
+    <marker id="ef-one" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto"><polygon points="0 0, 8 3.5, 0 7" fill="#fbbf24"/></marker>
+    <marker id="ef-end" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto"><polygon points="0 0, 8 3.5, 0 7" fill="#34d399"/></marker>
+    <marker id="ef-start" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto-start-reverse"><polygon points="0 0, 8 3.5, 0 7" fill="#34d399"/></marker>
+  </defs>
+
+  <text x="480" y="30" text-anchor="middle" font-size="20" font-weight="800" fill="#ffffff">🧠 Everything Memory — one engine per region, peered across borders</text>
+  <text x="480" y="53" text-anchor="middle" font-size="12.5" fill="#c4b5fd">each region exports MCP to its own corporate agents + people · the mesh is the memory bus, not a hub</text>
+
+  <!-- local corporate users per region (served over MCP) -->
+  <g>
+    <rect x="64" y="68" width="192" height="30" rx="15" fill="#1c1230" stroke="#6d28d9" stroke-width="1.6"/>
+    <text x="160" y="88" text-anchor="middle" font-size="11.5" fill="#ddd6fe">🤖 agents · 👤 people</text>
+    <rect x="384" y="68" width="192" height="30" rx="15" fill="#1c1230" stroke="#6d28d9" stroke-width="1.6"/>
+    <text x="480" y="88" text-anchor="middle" font-size="11.5" fill="#ddd6fe">🤖 agents · 👤 people</text>
+    <rect x="704" y="68" width="192" height="30" rx="15" fill="#1c1230" stroke="#6d28d9" stroke-width="1.6"/>
+    <text x="800" y="88" text-anchor="middle" font-size="11.5" fill="#ddd6fe">🤖 agents · 👤 people</text>
+  </g>
+
+  <!-- MCP connectors (region -> local users) -->
+  <g stroke="#a78bfa" stroke-width="1.6" stroke-dasharray="4 4">
+    <line x1="160" y1="98" x2="160" y2="120"/>
+    <line x1="480" y1="98" x2="480" y2="120"/>
+    <line x1="800" y1="98" x2="800" y2="120"/>
+  </g>
+  <g font-size="9.5" font-weight="700" fill="#c4b5fd">
+    <text x="176" y="113">MCP</text>
+    <text x="496" y="113">MCP</text>
+    <text x="816" y="113">MCP</text>
+  </g>
+
+  <!-- region blocks (equal size, horizontal) -->
+  <!-- US -->
+  <rect x="40" y="120" width="240" height="132" rx="14" fill="#0d1b2e" stroke="#38bdf8" stroke-width="2"/>
+  <text x="160" y="147" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">🇺🇸 us-east</text>
+  <circle cx="160" cy="192" r="38" fill="#160d27" stroke="#a78bfa" stroke-width="2.5"/>
+  <text x="160" y="189" text-anchor="middle" font-size="19">🧠</text>
+  <text x="160" y="208" text-anchor="middle" font-size="10.5" font-weight="800" fill="#ffffff">eMemory</text>
+
+  <!-- EU -->
+  <rect x="360" y="120" width="240" height="132" rx="14" fill="#0c2018" stroke="#34d399" stroke-width="2.4"/>
+  <text x="480" y="147" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">🇮🇪 eu-west 🔒</text>
+  <circle cx="480" cy="192" r="38" fill="#160d27" stroke="#a78bfa" stroke-width="2.5"/>
+  <text x="480" y="189" text-anchor="middle" font-size="19">🧠</text>
+  <text x="480" y="208" text-anchor="middle" font-size="10.5" font-weight="800" fill="#ffffff">eMemory</text>
+
+  <!-- JP -->
+  <rect x="680" y="120" width="240" height="132" rx="14" fill="#0d1b2e" stroke="#38bdf8" stroke-width="2"/>
+  <text x="800" y="147" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">🇯🇵 ap-northeast</text>
+  <circle cx="800" cy="192" r="38" fill="#160d27" stroke="#a78bfa" stroke-width="2.5"/>
+  <text x="800" y="189" text-anchor="middle" font-size="19">🧠</text>
+  <text x="800" y="208" text-anchor="middle" font-size="10.5" font-weight="800" fill="#ffffff">eMemory</text>
+
+  <!-- one-way peer connectors into EU (dotted, squared, on the bottom) -->
+  <path d="M220,252 L220,278 Q220,292 234,292 L426,292 Q440,292 440,278 L440,252" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-dasharray="2 6" stroke-linecap="round" marker-end="url(#ef-one)"/>
+  <path d="M740,252 L740,278 Q740,292 726,292 L534,292 Q520,292 520,278 L520,252" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-dasharray="2 6" stroke-linecap="round" marker-end="url(#ef-one)"/>
+  <text x="480" y="314" text-anchor="middle" font-size="11" font-weight="700" fill="#fbbf24">🔒 one-way — US &amp; Japan share with EU, EU accepts; EU shares nothing of its own</text>
+
+  <!-- two-way exchange US <-> JP (dotted, squared, lower) -->
+  <path d="M160,252 L160,326 Q160,340 174,340 L786,340 Q800,340 800,326 L800,252" fill="none" stroke="#34d399" stroke-width="2.4" stroke-dasharray="2 6" stroke-linecap="round" marker-start="url(#ef-start)" marker-end="url(#ef-end)"/>
+  <text x="480" y="362" text-anchor="middle" font-size="11.5" font-weight="700" fill="#34d399">two-way — US &amp; Japan share with and accept from each other</text>
+
+  <!-- legend -->
+  <text x="480" y="390" text-anchor="middle" font-size="11" fill="#c4b5fd">→ shared one way   ·   ↔ shared both ways</text>
+</svg>

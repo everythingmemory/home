@@ -1,0 +1,111 @@
+# Copyright (c) 2026 ConcurAI
+# SPDX-License-Identifier: BUSL-1.1
+# The Qdrant vector store — an OVERLAY on docker-compose.yml.
+#
+# The base stack is untouched: `docker compose up -d` is the pgvector stack it
+# always was, and nothing in it mentions Qdrant. Layering this file is what
+# switches the store — the same way the cloud repo layers `agency.yml`.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.qdrant.yml up -d
+# or, once, in .env:
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.qdrant.yml
+#   QDRANT_API_KEY=<a key you mint: openssl rand -hex 24>
+#
+# WHY AN OVERLAY AND NOT A PROFILE. The credential must be `${VAR:?}` — an
+# unkeyed vector store on the estate network is an open door to the corpus
+#and compose interpolates the WHOLE file whatever profile you bring
+# up, so a `:?` in the base file would make the default pgvector stack refuse to
+# start. In its own file the requirement binds exactly the runs that want the
+# store.
+#
+# One store per customer stack, always: this
+# container is part of ONE stack's backup and drill, never shared.
+
+services:
+  # NO PUBLISHED PORT: the engine dials it by service name on the stack's
+  # network, and nothing outside the stack has business reaching the corpus.
+  qdrant:
+    # Exact version AND digest: the tag names the release, the
+    # digest stops a re-pushed tag from changing what runs.
+    image: qdrant/qdrant:v1.19.1@sha256:12364fe851b9f17356fc88189fc06d1b521262e04659ec7345975b00c9246a10
+    restart: unless-stopped
+    # Memory limit: about twice this container's peak while a full rebuild from
+    # the archive writes its windows (419 MiB at 47,934 records, 2026-10-14). A
+    # runaway is killed and restarted without taking its neighbours down. The
+    # collections grow with the corpus, so this is the limit to revisit first.
+    mem_limit: 1g
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    environment:
+      # No default and no `:-` placeholder: compose refuses to start until .env
+      # names a key.
+      - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY:?QDRANT_API_KEY must be set to run the Qdrant overlay — mint one (openssl rand -hex 24) and put it in .env}
+    volumes:
+      - ememory_qdrant_data:/qdrant/storage
+    healthcheck:
+      # /readyz is the one endpoint Qdrant leaves unkeyed, which is exactly what
+      # a healthcheck needs. The image carries bash and no curl.
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/6333; echo -e \"GET /readyz HTTP/1.0\\r\\n\\r\\n\" >&3; grep -q \"200 OK\" <&3'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # The engine and every worker read and write the store named by VECTOR_STORE.
+  # All five must agree: a worker still writing pgvector while the app reads
+  # Qdrant is a corpus split in half. The maintenance worker embeds the
+  # sweep's backfill batches and computes their windows; the ingest worker
+  # embeds every asynchronous ingest.
+  ememory-api:
+    environment:
+      - VECTOR_STORE=qdrant
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY:?QDRANT_API_KEY must be set to run the Qdrant overlay}
+    depends_on:
+      qdrant:
+        condition: service_healthy
+
+  ememory-worker:
+    environment:
+      - VECTOR_STORE=qdrant
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY:?QDRANT_API_KEY must be set to run the Qdrant overlay}
+    depends_on:
+      qdrant:
+        condition: service_healthy
+
+  ememory-worker-archive:
+    environment:
+      - VECTOR_STORE=qdrant
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY:?QDRANT_API_KEY must be set to run the Qdrant overlay}
+    depends_on:
+      qdrant:
+        condition: service_healthy
+
+  ememory-worker-maintenance:
+    environment:
+      - VECTOR_STORE=qdrant
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY:?QDRANT_API_KEY must be set to run the Qdrant overlay}
+    depends_on:
+      qdrant:
+        condition: service_healthy
+  ememory-worker-ingest:
+    environment:
+      - VECTOR_STORE=qdrant
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY:?QDRANT_API_KEY must be set to run the Qdrant overlay}
+    depends_on:
+      qdrant:
+        condition: service_healthy
+
+volumes:
+  # Named, so a `down` keeps the vectors and a `down -v` discards them — the
+  # same contract as the Postgres volume.
+  ememory_qdrant_data:
+    driver: local

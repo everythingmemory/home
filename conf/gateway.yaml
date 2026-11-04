@@ -1,0 +1,59 @@
+# The gateway — the stack's LiteLLM proxy, and the engine's one model road
+#. Edit this file; restart the `gateway` service to apply it
+# (LiteLLM reads its config once, at start).
+#
+# WHAT THE ENGINE NEEDS FROM IT: an OpenAI-compatible endpoint at
+#   EMBEDDING_BASE_URL = http://gateway:4000/v1        (local.env)
+# serving one route whose `model_name` is EMBEDDING_MODEL, and that route's
+# WIDTH declared as `model_info.output_vector_size`. The engine reads the width
+# from GET /v1/model/info and embeds nothing without it — there is no default.
+#
+# THE MODEL NAME IS THE EMBEDDING SPACE. Renaming the route, or pointing
+# EMBEDDING_MODEL at another one, opens a new space: the embedding sweep
+# re-embeds the whole corpus into it.
+#
+# Keys come from the environment (`os.environ/NAME`), never from this file.
+
+model_list:
+  # THE SHIPPED DEFAULT: nomic-embed-text v1.5 on this machine — the
+  # stack's `local-embed` service (llama.cpp, the model built into its image).
+  # No key, nothing leaves the machine.
+  #
+  # TASK PREFIXES ARE PART OF THE ROUTE. nomic is trained to embed a document
+  # as "search_document: <text>" and a query as "search_query: <text>"; the
+  # engine reads both from /model/info with the width and applies them to
+  # every document and every query on this route. A route without them is sent
+  # as written. Changing them is a new route name — a new embedding space —
+  # never an edit here, or old and new vectors mix in one space.
+  - model_name: nomic-embed-text
+    litellm_params:
+      model: openai/nomic-embed-text
+      api_base: http://local-embed:8080/v1
+      api_key: none            # llama.cpp asks for none; LiteLLM needs a value
+    model_info:
+      mode: embedding
+      output_vector_size: 768
+      max_input_tokens: 2048
+      document_prefix: "search_document: "
+      query_prefix: "search_query: "
+
+  # THE SWITCH: OpenAI's text-embedding-3-small through OpenRouter. To use it,
+  # set OPENROUTER_API_KEY in gateway.env (from gateway.env.template), and in
+  # local.env set EMBEDDING_MODEL=text-embedding-3-small. It has no task
+  # prefixes. A new model is a new embedding space: the sweep re-embeds the
+  # whole corpus into it.
+  - model_name: text-embedding-3-small
+    litellm_params:
+      model: openrouter/openai/text-embedding-3-small
+      api_key: os.environ/OPENROUTER_API_KEY
+    model_info:
+      mode: embedding
+      output_vector_size: 1536
+      max_input_tokens: 8192
+
+  # Your own model is one more entry like these, with its width declared.
+
+litellm_settings:
+  drop_params: true
+  num_retries: 2
+  request_timeout: 120

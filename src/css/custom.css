@@ -1,0 +1,399 @@
+
+@import '@fontsource-variable/fraunces/opsz.css';
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+
+:root {
+  --ground: #eff2f6;
+  --surface: #ffffff;
+  --surface-2: #e5eaf1;
+  --ink: #1a2330;
+  --ink-soft: #54606f;
+  --ink-faint: #8591a0;
+  --line: #d5dde7;
+  --line-soft: #e4eaf1;
+  --accent: #a85d0c;
+  --accent-2: #8a4b08;
+  --accent-soft: #f1e3cf;
+  --good: #2c6a4c;
+  --good-soft: #dcebe2;
+  --gap: #a83a2c;
+  --gap-soft: #f2ded9;
+  --shadow: 0 1px 2px rgba(20, 30, 45, 0.05), 0 6px 20px rgba(20, 30, 45, 0.06);
+
+  --serif: 'Fraunces Variable', Georgia, serif;
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --ifm-font-family-base: var(--sans);
+  --ifm-font-family-monospace: var(--mono);
+  --ifm-heading-font-family: var(--serif);
+  --ifm-heading-font-weight: 500;
+  --ifm-font-size-base: 16px;
+  --ifm-line-height-base: 1.62;
+  --ifm-code-font-size: 0.9em;
+
+  --ifm-background-color: var(--ground);
+  --ifm-background-surface-color: var(--surface);
+  --ifm-font-color-base: var(--ink);
+  --ifm-heading-color: var(--ink);
+  --ifm-color-content-secondary: var(--ink-soft);
+  --ifm-toc-border-color: var(--line);
+  --ifm-color-emphasis-200: var(--line-soft);
+  --ifm-color-emphasis-300: var(--line);
+  --ifm-table-border-color: var(--line);
+  --ifm-table-stripe-background: transparent;
+  --ifm-table-head-background: var(--surface-2);
+  --ifm-hr-background-color: var(--line);
+  --ifm-code-background: var(--surface-2);
+  --ifm-code-border-radius: 4px;
+  --ifm-pre-background: var(--surface);
+  --ifm-global-radius: 10px;
+  --ifm-navbar-background-color: var(--surface);
+  --ifm-navbar-shadow: 0 1px 0 var(--line);
+  --ifm-footer-background-color: transparent;
+  --ifm-menu-color: var(--ink-soft);
+  --ifm-menu-color-background-active: var(--accent-soft);
+  --ifm-menu-color-background-hover: var(--surface-2);
+  --ifm-link-color: var(--accent);
+  --ifm-link-hover-color: var(--accent-2);
+
+  --ifm-color-primary: #a85d0c;
+  --ifm-color-primary-dark: #97540b;
+  --ifm-color-primary-darker: #8f4f0a;
+  --ifm-color-primary-darkest: #764108;
+  --ifm-color-primary-light: #b9660d;
+  --ifm-color-primary-lighter: #c16b0e;
+  --ifm-color-primary-lightest: #da7910;
+
+  --docusaurus-highlighted-code-line-bg: var(--accent-soft);
+}
+
+[data-theme='dark'] {
+  --ground: #11151b;
+  --surface: #1a212b;
+  --surface-2: #222c38;
+  --ink: #e8edf3;
+  --ink-soft: #98a3b2;
+  --ink-faint: #6b7787;
+  --line: #2b3542;
+  --line-soft: #232c38;
+  --accent: #e2a852;
+  --accent-2: #ebb86b;
+  --accent-soft: #33291a;
+  --good: #6fbf97;
+  --good-soft: #1b2a23;
+  --gap: #e28271;
+  --gap-soft: #2f1f1c;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 26px rgba(0, 0, 0, 0.32);
+
+  --ifm-color-primary: #e2a852;
+  --ifm-color-primary-dark: #dd9a37;
+  --ifm-color-primary-darker: #db932a;
+  --ifm-color-primary-darkest: #b9781d;
+  --ifm-color-primary-light: #e7b66d;
+  --ifm-color-primary-lighter: #e9bd7a;
+  --ifm-color-primary-lightest: #f0d1a3;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+.navbar__title {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+.navbar__link {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.theme-doc-sidebar-container {
+  border-right: 1px solid var(--line) !important;
+}
+.menu {
+  font-size: 0.9rem;
+}
+.menu__list-item-collapsible .menu__link {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.menu__link--active:not(.menu__link--sublist) {
+  color: var(--accent);
+  font-weight: 500;
+}
+.table-of-contents {
+  font-size: 0.82rem;
+}
+.table-of-contents__link--active {
+  color: var(--accent);
+}
+.breadcrumbs__link {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  background: transparent !important;
+  color: var(--ink-faint);
+}
+.footer {
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
+
+.theme-doc-markdown {
+  max-width: 760px;
+}
+.markdown p,
+.markdown li {
+  text-wrap: pretty;
+}
+.markdown p {
+  max-width: 68ch;
+}
+.markdown strong {
+  font-weight: 600;
+}
+
+.page-head {
+  margin-bottom: 2.6rem;
+  padding-bottom: 2.2rem;
+  border-bottom: 1px solid var(--line);
+}
+.eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6em;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.eyebrow .dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+}
+.markdown .page-head h1 {
+  font-size: clamp(36px, 5.2vw, 54px);
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  margin: 0.42em 0 0;
+}
+.markdown .page-head .lede {
+  font-size: clamp(17px, 1.6vw, 19.5px);
+  line-height: 1.55;
+  color: var(--ink-soft);
+  max-width: 62ch;
+  margin: 1.1em 0 0;
+}
+
+.markdown {
+  counter-reset: section;
+}
+.markdown h2 {
+  font-size: clamp(24px, 2.6vw, 31px);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  margin-top: 2.8em;
+}
+.markdown h3 {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 1.06rem;
+  margin-top: 2em;
+}
+.markdown:not(.kind-reference) h2 {
+  counter-increment: section;
+}
+.markdown:not(.kind-reference) h2::before {
+  content: counter(section, decimal-leading-zero);
+  display: block;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  margin-bottom: 0.5em;
+}
+.markdown.kind-reference h2 {
+  font-size: 1.45rem;
+  margin-top: 2.2em;
+  padding-top: 1.2em;
+  border-top: 1px solid var(--line);
+}
+
+.markdown code {
+  border: 0;
+  padding: 0.08em 0.4em;
+}
+.markdown pre,
+.theme-code-block {
+  border: 1px solid var(--line);
+  box-shadow: none;
+  font-size: 13.5px;
+}
+
+.markdown table {
+  display: table;
+  width: 100%;
+  font-size: 0.9rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.markdown table th {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  text-align: left;
+}
+.markdown table th,
+.markdown table td {
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  padding: 0.7rem 0.9rem;
+  vertical-align: top;
+}
+.markdown table tr:last-child td {
+  border-bottom: 0;
+}
+.markdown table tr {
+  background: transparent;
+  border: 0;
+}
+@media (max-width: 640px) {
+  .markdown table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 1.6rem 0;
+}
+@media (max-width: 640px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
+.card-x {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+  color: inherit;
+}
+a.card-x:hover {
+  border-color: var(--accent);
+  text-decoration: none;
+  color: inherit;
+}
+.card-x .role {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.card-x .name {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 19px;
+  margin: 0.3em 0 0.25em;
+}
+.card-x .what {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.theme-admonition {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--ink-faint);
+  border-radius: 8px;
+  box-shadow: none;
+  padding: 12px 15px;
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+.theme-admonition [class*='admonitionHeading'] {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 0.4rem;
+}
+.theme-admonition [class*='admonitionIcon'] {
+  display: none;
+}
+.theme-admonition-tip,
+.theme-admonition-info {
+  border-left-color: var(--good);
+}
+.theme-admonition-tip [class*='admonitionHeading'],
+.theme-admonition-info [class*='admonitionHeading'] {
+  color: var(--good);
+}
+.theme-admonition-warning,
+.theme-admonition-danger {
+  border-left-color: var(--gap);
+}
+.theme-admonition-warning [class*='admonitionHeading'],
+.theme-admonition-danger [class*='admonitionHeading'] {
+  color: var(--gap);
+}
+.theme-admonition-note {
+  border-left-color: var(--accent);
+}
+.theme-admonition-note [class*='admonitionHeading'] {
+  color: var(--accent);
+}
+.theme-admonition p:last-child {
+  margin-bottom: 0;
+}
+
+.pagination-nav__link {
+  background: var(--surface);
+  border-color: var(--line);
+}
+.pagination-nav__sublabel {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.pagination-nav__label {
+  font-family: var(--serif);
+  font-weight: 500;
+}

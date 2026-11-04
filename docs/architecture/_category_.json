@@ -1,0 +1,9 @@
+{
+  "label": "Concepts",
+  "position": 1.2,
+  "collapsed": true,
+  "link": {
+    "type": "generated-index",
+    "slug": "/architecture"
+  }
+}

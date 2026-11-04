@@ -1,0 +1,210 @@
+# Pipeline profiles — configure component sequences per processing path.
+#
+# Each profile defines one or more pipeline paths (curate, ingestion, gather, etc.).
+# Within each path, 'components' lists the execution order:
+#   - curate: retrievers run first (concurrently), then transforms sequentially
+#   - ingestion: all components run sequentially, with abort-on-validation-failure
+#   - gather: resolver → ordering → slice → load → format
+#
+# Per-component config can be added as top-level keys matching the component name.
+#
+# THE SHIPPED READERS OF A DERIVED PROPERTY READ `tag_cache`. A property
+# a plugin extracted from content is an INDEX, not a declaration: it has no
+# origin but the content and the plugin version, no id, it crosses nothing and
+# it is never archived. So the pool, the three temporal readers and the loader
+# named below are the tag-side components, and `property_cache` is read for
+# what an agent DECLARED. Every row-side sibling stays registered and selectable
+# — the pipeline is a menu — and `conf/profiles.tuning.yaml` holds each of these
+# profiles with the row-side names substituted back, as the control arm.
+#
+# Test-only profiles injected via tests/conftest.py.
+
+# --- Sentinel ---
+
+default:
+  curate_original:
+    components: [not-configured]
+  ingestion:
+    components: [not-configured]
+
+# --- Production curate profile ---
+
+agentic_eval_v1:
+  curate:
+    components: [tokenize_query, tag_property_retrieve, tsquery_retrieve, semantic,
+                 window_semantic, window_expand, true_distance_balanced_dedup,
+                 slice_page, load_srs, format_output]
+  ingestion:
+    components: [validate, persist, agent_properties, plugin_wordnet, plugin_duckling, plugin_json_leaf, embed, archive]
+    # source_type allowlist — agents must use one of these unless the
+    # profile sets allow_any_source_type: true. Customers extend by adding
+    # their own vocabulary (CRM, Slack, SAP, etc.).
+    # allowed_source_types: [conversational, documentary]
+    allow_any_source_type: true
+  tag_property_retrieve:
+    max_candidates: 200
+  semantic:
+    max_srs: 200
+  window_semantic:
+    max_srs: 400
+  tsquery_retrieve:
+    max_candidates: 20
+  true_distance_balanced_dedup:
+    semantic: 40
+    property: 35
+    window: 20
+    tsquery: 5
+  slice_page:
+    page_size: 30
+  format_output:
+    attribution_detail: 5
+
+# --- agentic_eval_v2 — v1 without `plugin_json_leaf` ---
+#
+# Measured 2026-10-09 on the fleet's only JSON records: no element `json_leaf`
+# put in `tag_cache` is one a question can produce (the question side is WordNet
+# alone, letters of three or more), and the single-word leaves WordNet had
+# already extracted. Its value was the catalog, which gave to
+# declared rows. On deep JSON (NVD: 100+ leaves a record) it mints elements
+# nothing reads. Everything else is v1, verbatim; v1 stays on the menu.
+agentic_eval_v2:
+  curate:
+    components: [tokenize_query, tag_property_retrieve, tsquery_retrieve, semantic,
+                 window_semantic, window_expand, true_distance_balanced_dedup,
+                 slice_page, load_srs, format_output]
+  ingestion:
+    components: [validate, persist, agent_properties, plugin_wordnet, plugin_duckling, embed, archive]
+    # source_type allowlist — agents must use one of these unless the
+    # profile sets allow_any_source_type: true. Customers extend by adding
+    # their own vocabulary (CRM, Slack, SAP, etc.).
+    # allowed_source_types: [conversational, documentary]
+    allow_any_source_type: true
+  tag_property_retrieve:
+    max_candidates: 200
+  semantic:
+    max_srs: 200
+  window_semantic:
+    max_srs: 400
+  tsquery_retrieve:
+    max_candidates: 20
+  true_distance_balanced_dedup:
+    semantic: 40
+    property: 35
+    window: 20
+    tsquery: 5
+  slice_page:
+    page_size: 30
+  format_output:
+    attribution_detail: 5
+
+# --- retrieval_v1 — the shipped profile: agentic_eval_v2 with time read by chrono ---
+#
+# `agentic_eval_v2` verbatim except `plugin_chrono` in `plugin_duckling`'s place
+# on the ingest list (pinned by tests/unit/pipeline/test_profile_retrieval_v1.py). A
+# stack selects it with PIPELINE_PROFILE — the profile is what decides which
+# extract plugins run — and TEMPORAL_PROFILE=timeline_v1 for the question
+# side. Needs the `chrono` entry in the plugins.yaml the stack runs. Selecting it
+# changes the stack's derived_version, so the census re-derives its corpus once.
+retrieval_v1:
+  curate:
+    components: [tokenize_query, tag_property_retrieve, tsquery_retrieve, semantic,
+                 window_semantic, window_expand, true_distance_balanced_dedup,
+                 slice_page, load_srs, format_output]
+  ingestion:
+    components: [validate, persist, agent_properties, plugin_wordnet, plugin_chrono, embed, archive]
+    # source_type allowlist — agents must use one of these unless the
+    # profile sets allow_any_source_type: true. Customers extend by adding
+    # their own vocabulary (CRM, Slack, SAP, etc.).
+    # allowed_source_types: [conversational, documentary]
+    allow_any_source_type: true
+  tag_property_retrieve:
+    max_candidates: 200
+  semantic:
+    max_srs: 200
+  window_semantic:
+    max_srs: 400
+  tsquery_retrieve:
+    max_candidates: 20
+  true_distance_balanced_dedup:
+    semantic: 40
+    property: 35
+    window: 20
+    tsquery: 5
+  slice_page:
+    page_size: 30
+  format_output:
+    attribution_detail: 5
+
+# --- Gather profile (e_gather tool) ---
+#
+# `load_srs`, NOT the tag-side loader. `load_srs_with_tags` exists to carry
+# `tag_cache.temporal` into `ctx.extra["temporal_map"]`, and the ONE component
+# that reads that map is `tag_temporal_order` — which this pipeline does not
+# run. Ordering here is `order_using_context`, on embeddings, before the loader.
+# A loader that fetched the ranges would spend a query per page on a map nothing
+# downstream opens.
+
+gather:
+  gather:
+    components: [gather_resolve, order_using_context, slice_page, load_srs, format_output]
+  slice_page:
+    page_size: 50
+
+# --- Temporal profile (e_timeline tool) ---
+#
+# Two pipelines:
+#   temporal      — list / intersect / walk: filter via tag_temporal_resolve, then time-order
+#   temporal_find — find: semantic retrieval (curate components), then time-order
+#
+# Both end with: load_srs_with_tags → tag_temporal_order → slice_page → format_output
+# (load before order so the sort has sr_map/ep_map and the records' ranges; slice
+#  after so we paginate the time-ordered set, not a relevance-truncated subset.)
+#
+# What a STORED match spans: a day-grain match spans its day and a month-grain
+# match spans its own calendar month, both off the GiST index. `match=` is
+# matched against the exact element.
+
+temporal: &temporal
+  temporal:
+    components: [temporal_parse, tag_temporal_resolve, tag_temporal_shed,
+                 load_srs_with_tags, tag_temporal_order, slice_page, format_output]
+  temporal_discourse:
+    components: [temporal_parse, tag_temporal_resolve, tag_temporal_shed,
+                 discourse_filter, load_srs_with_tags, tag_temporal_order, slice_page, format_output]
+  temporal_find:
+    components: [tokenize_query, tag_property_retrieve, tsquery_retrieve, semantic,
+                 window_semantic, window_expand, true_distance_balanced_dedup,
+                 load_srs_with_tags, tag_temporal_order, slice_page, format_output]
+  tag_temporal_resolve:
+    ceiling: 200
+  tag_property_retrieve:
+    max_candidates: 200
+  semantic:
+    max_srs: 200
+  window_semantic:
+    max_srs: 400
+  tsquery_retrieve:
+    max_candidates: 20
+  true_distance_balanced_dedup:
+    semantic: 40
+    property: 35
+    window: 20
+    tsquery: 5
+  slice_page:
+    page_size: 30
+  format_output:
+    attribution_detail: 5
+
+# `timeline_v1` — the same profile with the QUESTION read by `temporal_parse_v2`
+# (the chrono plugin) instead of `temporal_parse` (duckling). Everything else
+# is `temporal`'s, by the merge: `temporal_find` parses no question, and every
+# component's settings are inherited. Selected by TEMPORAL_PROFILE=timeline_v1;
+# needs the `chrono` entry in plugins.yaml, or a question yields no bounds.
+timeline_v1:
+  <<: *temporal
+  temporal:
+    components: [temporal_parse_v2, tag_temporal_resolve, tag_temporal_shed,
+                 load_srs_with_tags, tag_temporal_order, slice_page, format_output]
+  temporal_discourse:
+    components: [temporal_parse_v2, tag_temporal_resolve, tag_temporal_shed,
+                 discourse_filter, load_srs_with_tags, tag_temporal_order, slice_page, format_output]

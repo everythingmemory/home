@@ -1,0 +1,91 @@
+Everything (Epistemic) Memory is your long-term knowledge store with provenance tracking.
+
+CORE PRINCIPLES:
+
+- Authority hierarchy: human_correction > human_confirmation > documentary > conversational > system_inference. Higher authority supersedes lower on the same topic.
+- Epistemic isolation: Reason ONLY from retrieved SRs. If eMemory returns nothing, acknowledge the gap — never fill it from general knowledge.
+- Provenance: an SR may carry corrections (it was wrong → the correction supersedes it) and adjustments (later SRs that evolve it). Both surface on e_read, and as has_correction / has_adjustment flags in e_gather / e_timeline.
+
+ACCESS:
+
+lanes
+- A lane is a work area for agents: every SR lives in exactly one lane.
+- A lane may enforce a property l-value (label) vocabulary, rejecting unlisted labels.
+- e_ingest tool calls write to your home lane by default; pass assign_lane to write to lanes other than home.
+- e_gather and e_timeline tool calls include results from all readable lanes.
+- A lane is shown by its name. Two lanes you can see may share a name; each is then shown qualified, name@fragment (e.g. crm@3f9a2), the fragment a piece of the lane's uuid. Wherever you name a lane you may pass its name, its qualified name, or its full lane uuid.
+
+agent_profiles
+- An agent_profile encapsulates your lane access: it defines your home lane plus other lanes you read and/or write.
+- Your agent_profile is provided by the deployment (operator or host) — most calls don't require you to pass it; when one is needed and you don't have it in context, report that you need it.
+- agent_profiles and lanes are operator-configured — defining or scoping one is an admin task, not an agent tool. Authority and vocabulary rejections are self-documenting: read the error and adapt.
+
+DATA MODEL:
+- Source Record (SR): atomic unit of knowledge. One fact per SR. Content should stand alone without conversation context.
+- Properties: label:value pairs on SRs that enable structural retrieval. If you'd filter or compare on a dimension, it's a property — not content.
+- Corrections: warning labels on wrong SRs, stating the ground truth. Not for state changes — if reality changed but the original was true at the time, ingest a new SR instead.
+
+TOOL WORKFLOW:
+
+e_gather → e_read: Primary retrieval flow.
+- e_gather(action="find", query="...") finds ranked SRs by relevance; e_read loads full detail (properties, corrections, adjustments) for specific SRs. Reason over the evidence only after reading.
+
+e_property → e_gather: Discovery flow.
+- e_property(action="list") shows what property labels exist; (action="intersect", match=["person"]) shows values; (action="add", sr_id=..., properties=["label:value"]) adds properties to an SR you can write. e_gather then assembles evidence — find (semantic), intersect/union (property sets), or traverse (walk from a known SR).
+
+STRUCTURE — assert relationships, never imply them:
+
+- A shared property value is an INFERENCE: it says two SRs have something in common, never what passed between them. A connection is an ASSERTION: someone declared a named relation. Do not use one for the other.
+- NEVER express a relationship by putting another entity's name on a record. "place:Summit Tax" on a person is ambiguous with that record's own identity, and a reader cannot tell a name from a link. State identity with a name property; assert structure with the verbs below.
+- e_property(action="connect", sr_id=[a, b], hint="employs") — a named relation between EXACTLY TWO SRs. The engine stamps e_connect:employs_3049e7c1b82d4f6a9e05c3d71a8b2f64 on both, so the edge is the shared value itself: bidirectional, walkable by e_gather traverse, with no inverse edge. All-or-nothing — if either side is missing or outside your write authority, nothing is written.
+- e_property(action="group", sr_id=[a, b, c], hint="poker night") — a named membership among TWO OR MORE. Best-effort: it stamps what it can and reports what it skipped. A two-member group is legal and is NOT an edge.
+- e_property(action="disconnect", sr_id=[a, b]) removes the connection two SRs share (all-or-nothing; if they share more than one, name it with hint). e_property(action="ungroup", hint="e_group:<token>") removes a group membership, and e_property(action="unadjust", hint="e_adjustment:<token>") an adjustment link — from the sr_id you name, or from every holder you can see; ones you cannot write are skipped and reported.
+- The kind is the action, never a flag. You supply the meaning (hint); the engine supplies the uniqueness. These reserved e_* labels cannot be written or removed by hand — connect/group/adjusts add them, disconnect/ungroup/unadjust remove them; e_update and a property delete refuse them.
+
+UNIVERSAL PROPERTY ARGUMENT:
+
+- match takes ["label:value"] strings everywhere. Bare "label" matches the label as a category.
+- Same name, same format across all tools.
+- In e_gather: intersect = AND (all terms must match), union = OR (any term).
+- Always discover (e_property list/intersect) before inventing a label — reuse what exists.
+
+PAGINATION:
+
+- e_property, e_gather, e_timeline, e_correct return pageable results.
+- Each page re-executes from scratch (stateless).
+- Pull pages until results stop being useful. Optional page_size overrides the default and is honored as asked; above the server's configured ceiling it is refused with an error naming the limit, never quietly reduced.
+
+INGESTION:
+
+- e_ingest: Store new knowledge proactively. One fact per SR; content should stand alone (include reasoning and context, not just the conclusion).
+- Decisions → source_type: documentary; preferences → conversational.
+- Properties: identity ["person:Alex", "project:alpha"] (WHO/WHAT) + analytical ["alignment:strong", "tier:1", "role:lever"] (WHAT WE THINK). If you'd filter or compare on a dimension, it's a property — not content.
+- Include at least one property for structural discoverability.
+- Check e_gather(action="find") before ingesting to avoid duplicates.
+
+PROVENANCE — correct vs adjust:
+
+- e_correct (the SR is WRONG): state the truth, pinned to the one sr_id it is about. The correction supersedes the original; to change it, retract it and create another. Key test — was the original wrong, or did reality change? Wrong → correct; reality changed → adjust or ingest a new SR.
+- e_ingest adjusts=[sr_ids] (the SR is RIGHT but has EVOLVED): a new SR that enhances/updates existing ones.
+- It accretes (does not suppress) and links the new SR + its targets into a cluster you can walk with e_gather traverse.
+- Use this instead of "correcting" something that simply got sharper or newer.
+- e_update (the SAME authored artifact has a NEXT STATE): one record, evolved in place — same sr_id, new content, `version` bumped. Three different claims: adjust = the WORLD moved on (a new record, linked); update = the same artifact's next state (one record, evolved); correct = the record was WRONG. A plan, spec, roster or running summary you maintain is an update; a new fact about a changed world is an adjust. Every change to a record — update, property add or removal, connect, delete — is a new version in that record's history; superseded versions stay readable through e_audit(action="history") and e_read(as_of=...); retrieval only ever sees the current one.
+
+TEMPORAL QUERIES:
+
+- e_timeline: Retrieve knowledge ordered by time.
+- Actions: list (everything), find (semantic query), intersect (property filter), traverse (from anchor SR).
+- Use start_date/end_date for windows; order_by controls direction.
+- action="changes" with since/as_of lists what changed between two moments (when each change was written, by the writing engine's clock). Not a catch-up feed — entries can arrive after their time. Entries that arrive over the mesh each write an sr_synced event, read with e_audit since_seq; a bundle import is one bundle_imported event; an archive restore writes none.
+- IDF shedding refines dense results automatically.
+
+PROVENANCE TRAIL:
+
+- e_audit: the operation-ordered view — what HAPPENED (who ingested, corrected, adjusted, deleted; when; from where), vs e_timeline's content-ordered view of what is KNOWN.
+- e_audit(action="trace", sr_id=...) answers "why does memory say this?" mechanically; expand=true inlines the SR, corrections, and adjustment clusters. Works even after an SR is deleted.
+- Past states: e_read(sr_ids, as_of=T) reads SRs in the state given by the entries written by T that this engine holds; e_audit(action="history", sr_id=...) lists every state an SR has had and what changed. T is when each change was originally written — the same on every engine holding the same entries; deletion is local.
+- Scoped to your readable lanes, like every read tool.
+
+WHAT NOT TO CAPTURE:
+
+- transient task details, information already stored, vague observations, large code blocks (summarize instead).

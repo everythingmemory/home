@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 200" width="680" height="200" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="680" height="200" rx="16" fill="#140a26"/>
+  <defs>
+    <marker id="a10" markerWidth="9" markerHeight="7" refX="7.5" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#8b7bb8"/></marker>
+  </defs>
+  <text x="340" y="26" text-anchor="middle" font-size="13" font-weight="800" fill="#ffffff">Hybrid retrieval — structural precision + semantic reach</text>
+
+  <!-- connectors -->
+  <g stroke="#8b7bb8" stroke-width="1.7" marker-end="url(#a10)" fill="none">
+    <path d="M150 104 C200 104, 200 74, 248 74"/>
+    <path d="M150 116 C200 116, 200 150, 248 150"/>
+    <path d="M432 74 C486 74, 486 104, 512 104"/>
+    <path d="M432 150 C486 150, 486 116, 512 116"/>
+  </g>
+
+  <!-- Q -->
+  <rect x="16" y="88" width="134" height="46" rx="23" fill="#5b2a86" stroke="#a78bfa" stroke-width="1.8"/>
+  <text x="83" y="105" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">Model needs</text>
+  <text x="83" y="120" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">information</text>
+
+  <!-- EPG -->
+  <rect x="250" y="44" width="182" height="60" rx="10" fill="#241a3a" stroke="#7c3aed" stroke-width="1.8"/>
+  <text x="341" y="64" text-anchor="middle" font-size="11" font-weight="800" fill="#ffffff">🎯 EPG · structural</text>
+  <text x="341" y="79" text-anchor="middle" font-size="10" fill="#cdbff0">label intersection</text>
+  <text x="341" y="94" text-anchor="middle" font-size="10" fill="#cdbff0">— precise recall —</text>
+
+  <!-- SEM -->
+  <rect x="250" y="120" width="182" height="60" rx="10" fill="#0d1b2e" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="341" y="140" text-anchor="middle" font-size="11" font-weight="800" fill="#ffffff">🧭 semantic · vector</text>
+  <text x="341" y="155" text-anchor="middle" font-size="10" fill="#bfe3fb">meaning similarity</text>
+  <text x="341" y="170" text-anchor="middle" font-size="10" fill="#bfe3fb">— insightful exploration —</text>
+
+  <!-- R -->
+  <rect x="512" y="86" width="152" height="50" rx="25" fill="#11301f" stroke="#34d399" stroke-width="1.8"/>
+  <text x="588" y="105" text-anchor="middle" font-size="11" font-weight="700" fill="#bff5d6">exactly the records</text>
+  <text x="588" y="120" text-anchor="middle" font-size="11" font-weight="700" fill="#bff5d6">that matter</text>
+</svg>

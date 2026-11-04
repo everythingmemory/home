@@ -1,0 +1,40 @@
+# SHIPPED LAW - the engine's own policy document, identical on every engine.
+#
+# A policy imported from a uuid-free file mints its identities where it lands,
+# so two estates that each upload "the same" shared policy hold TWINS by name
+# and the write gate refuses the lane. This file is the answer: fixed ids, one
+# identity everywhere, so two estates that install it independently hold ONE
+# policy the moment they pair.
+#
+# READ-ONLY on an estate. The build authors it (origin `shipped`), so no upload
+# may edit it - author your own policy instead, or upload this material with
+# --fork to start an independent copy.
+#
+# INSTALLING IS THE OPERATOR'S MOVE, on each engine, and it is what activates
+# the law here: an estate that RECEIVES this policy from a peer holds it
+# DORMANT until its own operator installs it.
+#
+# STRUCTURE ONLY. Installing it shares nothing: what crosses to a peer
+# is a share on this engine (`peer share PEER pol_shared`) and an accept on the
+# other (`peer accept PEER pol_shared`).
+#
+# EVERY ID IS FIXED, policy down to member - the loader refuses this file if any
+# member would have to be minted, because a minted id is a per-engine id and
+# that is the twin this file exists to kill.
+policy_uuid: pol_shared
+policy_name: shared
+overview: >
+  The standard shared lane. One open lane, and the one profile that owns it -
+  install it on each engine that should take part, and two estates hold one
+  policy rather than a twin pair. Sharing it with a peer is a separate act.
+lanes:
+  shared:
+    lane_uuid: lane_shared
+    enabled: true
+    description: the common lane - open vocabulary, builtin source types
+profiles:
+  sharer:
+    profile_uuid: prof_shared_sharer
+    enabled: true
+    description: the shared lane's writer - it reads and writes `shared`, nothing else
+    home_lane: shared

@@ -1,0 +1,50 @@
+# SHIPPED LAW - Folder Intake's policy, identical on every engine.
+#
+# Built like `shared.yaml`: fixed ids, origin `shipped`, READ-ONLY on an
+# estate (author your own policy, or upload this material with --fork).
+# INSTALLING IS THE OPERATOR'S MOVE (`policy install files`), on each engine;
+# an estate that receives it from a peer holds it dormant until then.
+#
+# STRUCTURE ONLY. Installing it shares nothing: a share on this engine and an
+# accept on the other decide what crosses.
+#
+# The lane `files` is CLOSED: it takes the one source type below, `file: true`,
+# which declares every label Folder Intake writes (the engine refuses a
+# `file: true` type that leaves one out). `folder_intake` writes there.
+policy_uuid: pol_files
+policy_name: files
+overview: >
+  Folder Intake's lane. One closed lane holding the records of watched folders -
+  each folder, each file and each file's parts - and the profile that writes
+  them. Install it on each engine that runs Folder Intake; sharing it with a
+  peer is a separate act.
+lanes:
+  files:
+    lane_uuid: lane_files
+    enabled: true
+    description: the records of watched folders - folders, files and their parts
+    source_types:
+      file:
+        st_uuid: st_files_file
+        file: true
+        authority: documentary
+        description: a folder, a file or a part of one, as Folder Intake read it
+        allowed_labels:
+          - folder_id
+          - watch_status
+          - file_id
+          - file_path
+          - folder
+          - file_name
+          - file_format
+          - content_hash
+          - event
+          - chunk_index
+          - label: filepart
+            values: [superseded]
+profiles:
+  folder_intake:
+    profile_uuid: prof_files_folder_intake
+    enabled: true
+    description: Folder Intake's writer - it reads and writes `files`, nothing else
+    home_lane: files

@@ -1,0 +1,33 @@
+{
+  "name": "everything-memory-docs",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "SHOW_PLANNED=1 docusaurus start --port 3210",
+    "build": "docusaurus build",
+    "build:all": "SHOW_PLANNED=1 docusaurus build",
+    "serve": "docusaurus serve --port 3210",
+    "clear": "docusaurus clear",
+    "gen:tools": "python3 scripts/gen_tool_reference.py ../../core",
+    "check:tools": "python3 scripts/gen_tool_reference.py ../../core --check"
+  },
+  "dependencies": {
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/preset-classic": "3.10.2",
+    "@docusaurus/theme-mermaid": "3.10.2",
+    "@easyops-cn/docusaurus-search-local": "0.55.3",
+    "@fontsource-variable/fraunces": "5.3.0",
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "@fontsource/ibm-plex-sans": "5.3.0",
+    "@mdx-js/react": "3.1.1",
+    "@mermaid-js/layout-elk": "0.1.9",
+    "clsx": "2.1.1",
+    "mermaid": "11.17.2",
+    "prism-react-renderer": "2.4.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "engines": {
+    "node": ">=20.0"
+  }
+}

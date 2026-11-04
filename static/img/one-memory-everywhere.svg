@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" width="640" height="400" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="640" height="400" rx="16" fill="#140a26"/>
+  <defs>
+    <radialGradient id="sphere" cx="38%" cy="30%" r="78%">
+      <stop offset="0%" stop-color="#3a2a63"/>
+      <stop offset="55%" stop-color="#211437"/>
+      <stop offset="100%" stop-color="#120a22"/>
+    </radialGradient>
+    <radialGradient id="mcp" cx="38%" cy="30%" r="78%">
+      <stop offset="0%" stop-color="#0e3a5c"/>
+      <stop offset="55%" stop-color="#0d2440"/>
+      <stop offset="100%" stop-color="#07101f"/>
+    </radialGradient>
+  </defs>
+
+  <text x="320" y="26" text-anchor="middle" font-size="14" font-weight="800" fill="#ffffff">One memory, everywhere — every surface, one governed store</text>
+
+  <!-- eMemory sphere -->
+  <circle cx="320" cy="96" r="46" fill="url(#sphere)" stroke="#a78bfa" stroke-width="2.5"/>
+  <ellipse cx="304" cy="80" rx="18" ry="10" fill="#ffffff" opacity="0.10"/>
+  <text x="320" y="94" text-anchor="middle" font-size="26">🧠</text>
+  <text x="320" y="118" text-anchor="middle" font-size="12" font-weight="800" fill="#ffffff">eMemory</text>
+
+  <!-- eMemory ⇄ MCP -->
+  <line x1="320" y1="146" x2="320" y2="156" stroke="#c4b5fd" stroke-width="2"/>
+
+  <!-- MCP sphere -->
+  <circle cx="320" cy="198" r="40" fill="url(#mcp)" stroke="#38bdf8" stroke-width="2.5"/>
+  <ellipse cx="306" cy="184" rx="15" ry="8" fill="#ffffff" opacity="0.10"/>
+  <text x="320" y="196" text-anchor="middle" font-size="20">🔌</text>
+  <text x="320" y="217" text-anchor="middle" font-size="12" font-weight="800" fill="#ffffff">MCP</text>
+
+  <!-- MCP → every surface (no arrows; gaps at both ends) -->
+  <g stroke="#5f7fa6" stroke-width="1.6">
+    <line x1="320" y1="250" x2="112" y2="322"/>
+    <line x1="320" y1="250" x2="216" y2="322"/>
+    <line x1="320" y1="250" x2="320" y2="322"/>
+    <line x1="320" y1="250" x2="424" y2="322"/>
+    <line x1="320" y1="250" x2="528" y2="322"/>
+  </g>
+
+  <!-- surfaces -->
+  <g font-size="10.5" font-weight="700" fill="#ffffff" text-anchor="middle">
+    <rect x="64" y="332" width="96" height="32" rx="9" fill="#241a3a" stroke="#a78bfa" stroke-width="1.5"/><text x="112" y="352">💻 Claude Code</text>
+    <rect x="168" y="332" width="96" height="32" rx="9" fill="#0d1b2e" stroke="#38bdf8" stroke-width="1.5"/><text x="216" y="352">⌨️ Cursor</text>
+    <rect x="272" y="332" width="96" height="32" rx="9" fill="#241a3a" stroke="#a78bfa" stroke-width="1.5"/><text x="320" y="352">🌐 Claude.ai</text>
+    <rect x="376" y="332" width="96" height="32" rx="9" fill="#0d1b2e" stroke="#38bdf8" stroke-width="1.5"/><text x="424" y="352">🟩 Codex</text>
+    <rect x="480" y="332" width="96" height="32" rx="9" fill="#0d1b2e" stroke="#38bdf8" stroke-width="1.5"/><text x="528" y="352">🦾 OpenClaw</text>
+  </g>
+
+  <!-- tagline -->
+  <text x="320" y="388" text-anchor="middle" font-size="11" font-weight="700" fill="#c4b5fd">Vendor-neutral · self-hosted or cloud · MCP underneath</text>
+</svg>

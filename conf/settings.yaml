@@ -1,0 +1,14 @@
+# The owner's switches. Shadowable from CONF_OVERRIDE_DIR like limits.yaml;
+# an override REPLACES this file, so it names every switch it means to set.
+# A switch is read once per process: changing one restarts the engine and its
+# workers. A value that is not true or false reads as false, with a warning.
+
+# This engine's own deletions: a record delete (`e_system` delete over MCP,
+# the REST delete) and an undelete. Off, both are refused with a message
+# naming this switch. Removing a property is an edit, not a deletion, and is
+# not governed here. A deletion is local: it is never sent to peers, and a
+# record shared out stays on the peers that hold it. An undelete brings the
+# record back at its latest state (a peer's edit included): `e_read` shows
+# that state's version, and the next write numbers past the record's last
+# entry.
+deletions_enabled: false

@@ -1,0 +1,23 @@
+{
+  "name": "everythingmemory",
+  "owner": {
+    "name": "ConcurAI"
+  },
+  "metadata": {
+    "description": "Claude Code plugins for Everything Memory (eMemory)."
+  },
+  "plugins": [
+    {
+      "name": "ememory-core",
+      "source": "./plugins/ememory-core",
+      "description": "Skills, an orientation agent and session hooks for storing, finding and correcting knowledge in an eMemory stack.",
+      "version": "1.0.0",
+      "author": {
+        "name": "ConcurAI"
+      },
+      "license": "Apache-2.0",
+      "homepage": "https://github.com/everythingmemory/home",
+      "category": "productivity"
+    }
+  ]
+}

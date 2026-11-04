@@ -1,0 +1,32 @@
+# Arq cron job configuration.
+# Remove this file (or set CRON_ENABLED=false) to disable all cron jobs.
+# Each entry maps to arq.cron.cron() parameters. All jobs unique=true by default.
+
+# Backfill safety net — normal ingestion embeds inline. Hourly at :00.
+# (Note: `hour: every` with no `minute` runs EVERY MINUTE in arq, since an
+# unset minute matches any minute. Use an explicit `minute` to set cadence.)
+task_embedding_sweep:
+  minute: 0
+  run_at_startup: true
+
+# The tag index's census. Hourly at :00, and at startup. A pass queues every
+# record with no current tag row, in batches, on the maintenance queue — unless the
+# previous pass's backlog is still being worked.
+task_tagging_sweep:
+  minute: 0
+  run_at_startup: true
+
+# Bidirectional reconciliation Spaces <-> Postgres. Every 5 min + first tick at startup.
+task_sync_sweep:
+  minute: [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
+  run_at_startup: true
+
+# Push+pull for all active sync peers. Every 5 min.
+task_sync_peers:
+  minute: [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
+
+# The history into the archive: every audit bucket touched since the last run,
+# one PUT per bucket. Every 5 min, offset from the sync sweep so the
+# two corpus passes do not start on the same tick.
+task_archive_audit:
+  minute: [2, 7, 12, 17, 22, 27, 32, 37, 42, 47, 52, 57]

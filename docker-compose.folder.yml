@@ -1,0 +1,59 @@
+# Copyright (c) 2026 ConcurAI
+# SPDX-License-Identifier: BUSL-1.1
+# Folder Intake — a folder on this machine, kept in eMemory (v48).
+#
+# ITS OWN COMPOSE FILE AND PROJECT: start, stop and switch folders without
+# touching the running stack. It joins the stack's network (`ememory`, or
+# EMEMORY_NETWORK if the stack set it) and posts to the engine by service name;
+# it publishes nothing and mounts the folder READ-ONLY.
+#
+# The folder is FOLDER, an ABSOLUTE path on this machine (default: `inbox` in
+# the directory you run compose from). It is mounted at the same path inside the container, so a
+# record names the file by its real path, exactly as `./e.sh ingest` run on the
+# host would — and two folders never share a name.
+#
+# ALWAYS NAME THE PROJECT (-p intake-<name>): without it this file would run in
+# the directory's default project, which is the main stack's.
+#
+#   start watching:  FOLDER=/abs/path docker compose -f docker-compose.folder.yml -p intake-contracts up -d
+#   stop:            docker compose -f docker-compose.folder.yml -p intake-contracts down
+#   switch folders:  stop, then start with another FOLDER (a project per folder
+#                    runs several at once: -p intake-a, -p intake-b)
+#   one pass:        FOLDER=/abs/path docker compose -f docker-compose.folder.yml -p intake-once run --rm folder-intake /abs/path
+#
+# AUTH: a stack with AUTH_ENABLED=true needs a client key here, from the shell
+# or a .env beside this file: EMEMORY_API_KEY=<key> (its hash in the engine's
+# API_KEY_HASH_LIST). Unset, nothing is sent — right for the auth-off default.
+services:
+  folder-intake:
+    # Published to GHCR and pinned by scripts/pin-images.sh at a release;
+    # building it here instead is docker-compose.folder.build.yml.
+    image: ghcr.io/everythingmemory/folder-intake:1.2.11@sha256:61f5037259aa9d14e31b83e59fa43bb603378096d43178d5b7e6555c412f4b82
+    restart: unless-stopped
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+    environment:
+      - EMEMORY_URL=http://ememory-api:8765
+      # Passed through as written, never defaulted; by env, never argv.
+      - EMEMORY_API_KEY=${EMEMORY_API_KEY}
+      # The profile it writes as. `folder_intake` is the shipped `files`
+      # policy's writer (install it first: `./e.sh policy install files`); its
+      # home lane `files` has the one `file: true` source type every record is
+      # written with. FOLDER_PROFILE names another — one whose home lane has
+      # exactly one `file: true` type.
+      - EMEMORY_PROFILE=${FOLDER_PROFILE:-folder_intake}
+    volumes:
+      - ${FOLDER:-${PWD}/inbox}:${FOLDER:-${PWD}/inbox}:ro
+    # The watching pass: the folder, rescanned every FOLDER_INTERVAL seconds
+    # (default 60). `run --rm folder-intake <path>` replaces this with one pass.
+    command: ["${FOLDER:-${PWD}/inbox}", "--watch", "--interval", "${FOLDER_INTERVAL:-60}"]
+    networks: [ememory]
+
+networks:
+  ememory:
+    name: ${EMEMORY_NETWORK:-ememory}
+    external: true
