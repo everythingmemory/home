@@ -35,13 +35,14 @@ The plugin also carries:
 
 ## Installing them
 
-In Claude Code, install the skills as a plugin:
+In Claude Code, install the skills as a plugin from the eMemory repository:
 
-```text
-/plugin install ememory-core@<source>
+```bash
+claude plugin marketplace add everythingmemory/home
+claude plugin install ememory@everythingmemory
 ```
 
-**TODO — the plugin's source: it is published in the public repository at release.**
+Or, inside Claude Code, run `/plugin` and pick `ememory` from the `everythingmemory` marketplace. Installing eMemory never installs the plugin; it is your choice.
 
 Then connect the agent to the API service; see [connecting clients](../../operator-guide/connecting-clients-and-operating/).
 

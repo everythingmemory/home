@@ -15,7 +15,7 @@ A local stack behind NAT or a firewall cannot be dialled. It does not need to be
 
 ## What only ConcurAI can provision
 
-The SaaS side of the pairing is a call to the SaaS engine's peer routes with a credential that engine accepts. Minting the accept-only row and its key, and sharing or accepting policies on the SaaS engine, are done there. **TODO — how a SaaS customer obtains the key and sets the SaaS engine's shares and accepts (through ConcurAI, or a route offered to customers).**
+The SaaS side of the pairing is a call to the SaaS engine's peer routes with a credential that engine accepts. Minting the accept-only row and its key, and sharing or accepting policies on the SaaS engine, are done there. ConcurAI sets up the SaaS side for you: [register](https://everythingmemory.ai/ememory/register/), choose the hosted trial, and say you want to peer a local stack; you receive the key, and the SaaS engine's shares and accepts are set as you ask.
 
 ## Steps on the local stack
 

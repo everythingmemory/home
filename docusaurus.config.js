@@ -29,9 +29,9 @@ const exclude = [
 
 module.exports = {
   title: 'Everything Memory',
-  tagline: 'A store of facts that AI agents write and read',
+  tagline: 'A system of record for AI agents',
   url: process.env.DOCS_URL || 'https://everythingmemory.ai',
-  baseUrl: process.env.DOCS_BASE_URL || '/docs/',
+  baseUrl: process.env.DOCS_BASE_URL || '/',
   trailingSlash: true,
   onBrokenLinks: 'throw',
   onBrokenAnchors: 'throw',
@@ -43,13 +43,12 @@ module.exports = {
       'classic',
       {
         docs: {
-          routeBasePath: '/',
+          routeBasePath: '/docs',
           sidebarPath: require.resolve('./sidebars.js'),
           exclude,
           breadcrumbs: true,
         },
         blog: false,
-        pages: false,
         theme: {customCss: require.resolve('./src/css/custom.css')},
       },
     ],
@@ -68,8 +67,10 @@ module.exports = {
     navbar: {
       title: 'Everything Memory',
       items: [
-        {to: '/', label: 'Overview', position: 'left'},
-        {to: '/reference/', label: 'Reference', position: 'left'},
+        {to: '/docs/', label: 'Docs', position: 'left'},
+        {to: '/docs/reference/', label: 'Reference', position: 'left'},
+        {href: 'https://github.com/everythingmemory/home', label: 'Get started', position: 'right'},
+        {href: 'https://everythingmemory.ai/ememory/register/', label: 'Register', position: 'right'},
       ],
     },
     docs: {sidebar: {hideable: false, autoCollapseCategories: true}},

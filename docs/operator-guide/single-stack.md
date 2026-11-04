@@ -52,7 +52,7 @@ The database itself is rebuilt from the archive: an engine started on an empty d
 ## Upgrades
 
 1. Read the release notes for settings that changed.
-2. Get the new images and compose files. **TODO — published images.**
+2. Get the new compose files: download the new release of [everythingmemory/home](https://github.com/everythingmemory/home/releases), unpack it beside the old one, and copy across your `local.env` and any file you changed in `conf/`. Then `docker compose pull` fetches the images it pins.
 3. `docker compose up -d`. The API service runs the database migrations when it starts.
 4. Check `curl -s http://localhost:8765/health`.
 

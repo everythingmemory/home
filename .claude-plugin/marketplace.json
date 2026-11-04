@@ -8,8 +8,8 @@
   },
   "plugins": [
     {
-      "name": "ememory-core",
-      "source": "./plugins/ememory-core",
+      "name": "ememory",
+      "source": "./plugins/ememory",
       "description": "Skills, an orientation agent and session hooks for storing, finding and correcting knowledge in an eMemory stack.",
       "version": "1.0.0",
       "author": {

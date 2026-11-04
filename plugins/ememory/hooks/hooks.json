@@ -1,10 +1,15 @@
 {
-  "description": "Session-start nudges to orient from eMemory. Command hooks only: they print a reminder, and the agent calls whichever eMemory server is configured.",
+  "description": "Session-start context for eMemory. Command hooks only: they print this plugin's CLAUDE.md and a reminder, and the agent calls whichever eMemory server is configured.",
   "hooks": {
     "SessionStart": [
       {
         "matcher": "startup",
         "hooks": [
+          {
+            "type": "command",
+            "command": "cat \"${CLAUDE_PLUGIN_ROOT}/CLAUDE.md\"",
+            "timeout": 5
+          },
           {
             "type": "command",
             "command": "echo 'eMemory: before starting work, run e_gather(action=\"intersect\", match=[\"directive\"]) for standing rules, e_property(action=\"list\") for the property vocabulary, and e_gather(action=\"intersect\", match=[\"session:current\"]) for prior session context. If eMemory tools fail, invoke e-doctor.'",
@@ -17,6 +22,11 @@
         "hooks": [
           {
             "type": "command",
+            "command": "cat \"${CLAUDE_PLUGIN_ROOT}/CLAUDE.md\"",
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "echo 'Session resumed: run e_gather(action=\"intersect\", match=[\"session:current\"]) and e_timeline(action=\"list\", order_by=\"ingest_time_desc\") to restore working context from eMemory.'",
             "timeout": 5
           }
@@ -25,6 +35,11 @@
       {
         "matcher": "compact",
         "hooks": [
+          {
+            "type": "command",
+            "command": "cat \"${CLAUDE_PLUGIN_ROOT}/CLAUDE.md\"",
+            "timeout": 5
+          },
           {
             "type": "command",
             "command": "echo 'Context was compacted: run e_gather(action=\"intersect\", match=[\"session:current\"]) and e_timeline(action=\"list\", order_by=\"ingest_time_desc\") to restore the decisions, findings and state you stored in eMemory earlier this session.'",

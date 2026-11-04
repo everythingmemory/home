@@ -25,4 +25,4 @@ When a client first connects without a token, the engine answers `401` and point
 
 ## Client keys
 
-Client keys keep working alongside sign-in, for programs and scripts. **TODO — how a SaaS customer obtains a client key.**
+Client keys keep working alongside sign-in, for programs and scripts. To get an eMemory SaaS account and its first client key, [register](https://everythingmemory.ai/ememory/register/) and choose the hosted trial.

@@ -1,5 +1,5 @@
 {
-  "name": "ememory-core",
+  "name": "ememory",
   "version": "1.0.0",
   "description": "Everything Memory (eMemory) for Claude Code: skills, an orientation agent and session hooks for storing, finding and correcting knowledge with provenance in an eMemory stack.",
   "author": {

@@ -20,13 +20,13 @@ ConcurAI holds the copyright and the trademark in Everything Memory, and is the 
 
 ## The source
 
-The images are public. The source is available on request, under the BSL, for review, evaluation and integration — ask through the same route as a licence (below).
+The images are public. The source is available on request, under the BSL, for review, evaluation and integration — register and choose the source code (below).
 
 ## What the Business Source License permits
 
 | Use | Permitted |
 |---|---|
-| Evaluation | Yes, free |
+| Evaluation | Yes, free — install it from [everythingmemory/home](https://github.com/everythingmemory/home) and use it |
 | Development | Yes, free |
 | Testing | Yes, free |
 | Production use | Only under a commercial licence |
@@ -42,4 +42,4 @@ The bundle tool and Folder Intake are under Apache 2.0 from the start, so you ca
 
 ## Getting a commercial or trial licence
 
-Trial and commercial licences are requested by signing in at everythingmemory.ai. **TODO — the exact link.**
+Register at [everythingmemory.ai/ememory/register](https://everythingmemory.ai/ememory/register/) and choose what you would like: a free hosted trial, the source code, or a conversation with us — the route for a commercial or field-test licence.

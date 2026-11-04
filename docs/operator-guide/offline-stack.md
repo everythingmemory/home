@@ -20,11 +20,10 @@ Do not switch the gateway to a provider's route on an offline stack: that route 
 
 ## Steps
 
-1. **On a connected machine**, get the stack and its images. **TODO — published images.** Until they are published, clone the core repository: the stack's own images (engine, plugins, local embedding model) are built from it. Configure `local.env` as in the [quickstart](../quickstart/) steps 2 to 4, then build and pull everything:
+1. **On a connected machine of the same architecture as the isolated one** (amd64 or arm64), get the stack and its images. Download the latest release of [everythingmemory/home](https://github.com/everythingmemory/home/releases) and unpack it, configure `local.env` as in the [quickstart](../quickstart/) steps 2 to 4, then pull every image the compose file pins:
 
    ```bash
-   docker compose build
-   docker compose pull ememory-postgres ememory-redis archive-store gateway console
+   docker compose pull
    ```
 
 2. **Save the images and their manifest.**
@@ -35,9 +34,9 @@ Do not switch the gateway to a provider's route on an offline stack: that route 
 
    This writes `ememory-images/images.tar`, every image the compose file names, and `ememory-images/images.tsv`, which records for each service the image it uses and that image's content (its layers), read from the pinned image.
 
-3. **Carry** the `ememory-images` folder and the repository checkout, with its `local.env`, into the isolated site.
+3. **Carry** the `ememory-images` folder and the unpacked release, with its `local.env`, into the isolated site.
 
-4. **Load the images.** In the repository root:
+4. **Load the images.** In the release folder:
 
    ```bash
    scripts/offline-images.sh load ememory-images
