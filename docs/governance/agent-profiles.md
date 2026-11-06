@@ -1,17 +1,12 @@
----
-title: "Agent Profiles"
-sidebar_position: 2
-kind: concept
-status: drafted
-verified_against: null
-lede: "An owner running many agents on one engine needs to say, in one place, where each agent writes and what it reads, rather than telling every agent separately. An agent profile, declared in a policy, gives an agent a home lane and read and write grants on other lanes; the engine holds every call to the lanes of the profile it names, and to those lanes' source types; an agent can ask for its own map of writable lanes, source types and labels; and two profiles, open and restricted, ship ready on a new engine."
----
+# Agent Profiles
 
-Challenges addressed: [Auditable Decision-Making](../../use-cases/auditing-agentic-decisions/), [Multi-Agent Coordination](../../use-cases/agent-swarm-coordination/).
+An owner running many agents on one engine needs to say, in one place, where each agent writes and what it reads, rather than telling every agent separately. An agent profile, declared in a policy, gives an agent a home lane and read and write grants on other lanes; the engine holds every call to the lanes of the profile it names, and to those lanes' source types; an agent can ask for its own map of writable lanes, source types and labels; and two profiles, open and restricted, ship ready on a new engine.
+
+Challenges addressed: [Auditable Decision-Making](../use-cases/auditing-agentic-decisions.md), [Multi-Agent Coordination](../use-cases/agent-swarm-coordination.md).
 
 ## Concepts
 
-An agent's **agent profile** is its map of the workspace. It names a `home_lane` plus per-lane read and write grants — which lanes it may work within, and what it may do in each; each lane in turn declares the [source types](../source-types/), and label vocabulary, it can hold. Together they hand the agent a clear picture: which lanes it can reach, and what kinds of source records each one contains and accepts. The engine enforces that agent profile's lanes on every call: reads and writes land only where it grants them, and only as the lane's source types allow. One eMemory, many agents — each with its own map. Agent profiles are declared in a [policy](../policies/).
+An agent's **agent profile** is its map of the workspace. It names a `home_lane` plus per-lane read and write grants — which lanes it may work within, and what it may do in each; each lane in turn declares the [source types](source-types.md), and label vocabulary, it can hold. Together they hand the agent a clear picture: which lanes it can reach, and what kinds of source records each one contains and accepts. The engine enforces that agent profile's lanes on every call: reads and writes land only where it grants them, and only as the lane's source types allow. One eMemory, many agents — each with its own map. Agent profiles are declared in a [policy](policies.md).
 
 | Setting | Effect |
 |---|---|
@@ -20,7 +15,7 @@ An agent's **agent profile** is its map of the workspace. It names a `home_lane`
 | `can_write_other_lanes` | More lanes the agent may write |
 | `can_read_any_lane`, `can_write_any_lane` | Every lane a policy declares |
 
-In a policy, the grants and the home lane name lanes as written in the document — a name, a qualified label or a UUID. The engine resolves each to one lane UUID: first among the lanes this policy declares, then among every lane the engine holds. A name that matches more than one is refused; name it with its qualified label or its UUID. See [lane labels](../lanes/#lane-labels).
+In a policy, the grants and the home lane name lanes as written in the document — a name, a qualified label or a UUID. The engine resolves each to one lane UUID: first among the lanes this policy declares, then among every lane the engine holds. A name that matches more than one is refused; name it with its qualified label or its UUID. See [lane labels](lanes.md#lane-labels).
 
 `e_read`, `e_gather`, `e_timeline` and `e_audit` return only records in lanes the agent profile can read. Ingesting, updating, adding an edge property, correcting and deleting each need write access to the record's lane.
 
@@ -44,4 +39,4 @@ Some results are not limited by lane:
 
 ## Reference
 
-[`e_system`](../../reference/tools/e_system/).
+[`e_system`](../reference/tools/e_system.md).

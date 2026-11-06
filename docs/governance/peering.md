@@ -1,13 +1,8 @@
----
-title: "Peering"
-sidebar_position: 8
-kind: concept
-status: drafted
-verified_against: "core 1.2.8"
-lede: "An owner whose agents run on several engines, under different owners and rules, needs to decide exactly what moves between them and with whom, and to stop it at will. Peering lets each side choose for itself: an owner shares a policy with a chosen peer and the peer accepts it, so nothing crosses that both did not pick, and nothing crosses by default; each peer has its own key, which opens only the exchange and can be rotated or removed; and deletions never cross."
----
+# Peering
 
-Challenges addressed: [Enterprise Distributed Memory Requirements](../../use-cases/enterprise-memory-mesh/), [Multi-Agent Isolation](../../use-cases/multi-agent-isolation/).
+An owner whose agents run on several engines, under different owners and rules, needs to decide exactly what moves between them and with whom, and to stop it at will. Peering lets each side choose for itself: an owner shares a policy with a chosen peer and the peer accepts it, so nothing crosses that both did not pick, and nothing crosses by default; each peer has its own key, which opens only the exchange and can be rotated or removed; and deletions never cross.
+
+Challenges addressed: [Enterprise Distributed Memory Requirements](../use-cases/enterprise-memory-mesh.md), [Multi-Agent Isolation](../use-cases/multi-agent-isolation.md).
 
 ## Two decisions, one on each side
 
@@ -24,7 +19,7 @@ A record crosses only when its lane's policy is shared by its owner (that policy
 ## Trust between engines
 
 - **Peering needs authentication.** An engine with authentication off refuses to peer.
-- **Each peer has its own key.** An engine can mint an inbound key for a peer (and must, for a peer it cannot dial); it is shown once, and the peer sends it on every exchange. A peer key opens only the two exchange routes — it can read and send what is shared, and nothing else; managing peers takes a client key or an OAuth sign-in.
+- **Each peer has its own key.** An engine can mint an inbound key for a peer (and must, for a peer it cannot dial); it is shown once, and the peer sends it on every exchange. A peer key opens only the two exchange routes — it can read and send what is shared, and nothing else; managing peers takes a client key that may do `peers` work, or an OAuth sign-in.
 - **Keys rotate.** Minting a replacement stops the old key at once.
 - **Unpairing is one step.** Removing a peer ends every exchange with it.
 
@@ -37,4 +32,4 @@ A record crosses only when its lane's policy is shared by its owner (that policy
 
 ## Setting it up
 
-Step by step, with every command: [stacks in a mesh](../../operator-guide/stacks-in-a-mesh/), [local stacks peered with eMemory SaaS](../../operator-guide/saas-peering/), [a multi-site mesh](../../operator-guide/multi-site-mesh/). How the exchange works underneath: [distributed mesh architecture](../../architecture/distributed-mesh-architecture/).
+Step by step, with every command: [stacks in a mesh](../operator-guide/stacks-in-a-mesh.md), [local stacks peered with eMemory SaaS](../operator-guide/saas-peering.md), [a multi-site mesh](../operator-guide/multi-site-mesh.md). How the exchange works underneath: [distributed mesh architecture](../architecture/distributed-mesh-architecture.md).

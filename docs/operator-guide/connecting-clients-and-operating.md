@@ -1,22 +1,17 @@
----
-title: "Connecting Clients and Operating the Stack"
-sidebar_position: 9
-kind: how-to
-status: drafted
-verified_against: null
-lede: "Start the stack, know its ports, turn on client keys, connect agents and programs, open the console, and check health and logs."
----
+# Connecting Clients and Operating the Stack
+
+Start the stack, know its ports, turn on client keys, connect agents and programs, open the console, and check health and logs.
 
 ## Start the stack
 
-Fill in `local.env` from the settings template — at least `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `AUTH_ENABLED`, `ARCHIVE_DIR`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `ARCHIVE_KEY` and the `EMBEDDING_*` settings (the template pre-fills `POSTGRES_DB`, `POSTGRES_USER` and `S3_BUCKET`) — link it as `.env`, and start the stack with Docker Compose.
+Write `.env`, the stack's one settings file, with `./e.sh init` — it generates every password and key and makes the archive folder (see the [quickstart](quickstart.md)) — and start the stack with Docker Compose.
 
 ```bash
-ln -s local.env .env
+./e.sh init
 docker compose up -d
 ```
 
-`docker compose up` refuses to start while a required setting is missing, and names it. Every setting: [configuration options](../../configuration/).
+`docker compose up` refuses to start while a required setting is missing, and names it. Every setting: [configuration options](../configuration/index.md).
 
 ## Ports
 
@@ -29,15 +24,15 @@ To try it, no key is needed: the template ships `AUTH_ENABLED=false`, and port 8
 
 ## Client keys
 
-With `AUTH_ENABLED=false` (the template's value) every caller on this machine is accepted without a key. With `AUTH_ENABLED=true`, every caller except `/health` sends `Authorization: Bearer <key>`, and the engine holds only each key's SHA-256 hash, in `API_KEY_HASH_LIST`.
+With `AUTH_ENABLED=false` (the template's value) every caller on this machine is accepted without a key. With `AUTH_ENABLED=true`, every caller except `/health` sends `Authorization: Bearer <key>`, and the engine holds only each key's SHA-256 hash, in `conf/keys.yaml`.
 
-Mint one key per client, put its hash in `API_KEY_HASH_LIST` (comma-separated), and give the key to that client:
+Create one key per client and give the key to that client:
 
 ```bash
-python3 -c "import hashlib,secrets; k='emem_'+secrets.token_urlsafe(32); print('key: ', k); print('hash:', hashlib.sha256(k.encode()).hexdigest())"
+./e.sh client-key create --label <name>
 ```
 
-Every key is equal. Removing a hash revokes that key. With authentication on and no hash, the engine refuses to start. With authentication on, the [audit log](../../durability/the-audit-log/) records which key made each write.
+It prints the key once and appends its entry — label, hash and any scope — to `conf/keys.yaml`; restart the stack to use it. Add `--profiles`, `--policies` or `--operations` to confine a key; with none, the key opens everything. Deleting an entry revokes that key. With authentication on and no key, the engine refuses to start. With authentication on, the [audit log](../durability/the-audit-log.md) records which key made each write, by its label. The fields and the rules: [client keys](../configuration/authentication.md#client-keys).
 
 ## Connect clients
 
@@ -48,11 +43,11 @@ Every key is equal. Removing a hash revokes that key. With authentication on and
 | A change-feed subscriber | `http://localhost:8765/api/v1/feed` | The same header |
 | `e.sh`, the command-line script | The REST API | `--api-key` or `EMEMORY_API_KEY` |
 
-What an agent does once connected: [a walkthrough](../../agents-how-to/walkthrough/).
+What an agent does once connected: [a walkthrough](../agents-how-to/walkthrough.md).
 
 ## The console
 
-Open `http://127.0.0.1:8766/`. The console passes `/api` to the API service. With authentication on, you sign in once with a client key; the console's server holds it and sends it with each request, and the browser keeps only a session cookie.
+Open `http://127.0.0.1:8766/`. The console passes `/api` to the API service. With authentication on, you sign in once with a client key — create a dedicated one for people, `./e.sh client-key create --label console`; the console's server holds it and sends it with each request, and the browser keeps only a session cookie.
 
 ## Health
 

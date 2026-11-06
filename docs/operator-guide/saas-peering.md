@@ -1,13 +1,8 @@
----
-title: "Local Stacks Peered with eMemory SaaS"
-sidebar_position: 13
-kind: how-to
-status: drafted
-verified_against: null
-lede: "Peer a stack on a laptop or your own server with an engine on eMemory SaaS. The local stack dials out; the SaaS engine never needs to reach it."
----
+# Local Stacks Peered with eMemory SaaS
 
-The deployment option: [locally hosted stacks peered with eMemory SaaS](../../deployment-options/local-and-saas/). The concepts: [peering](../../governance/peering/).
+Peer a stack on a laptop or your own server with an engine on eMemory SaaS. The local stack dials out; the SaaS engine never needs to reach it.
+
+The deployment option: [locally hosted stacks peered with eMemory SaaS](../deployment-options/local-and-saas.md). The concepts: [peering](../governance/peering.md).
 
 ## How it works
 
@@ -19,7 +14,7 @@ The SaaS side of the pairing is a call to the SaaS engine's peer routes with a c
 
 ## Steps on the local stack
 
-1. Set `AUTH_ENABLED=true` and a client key in `API_KEY_HASH_LIST`; peering refuses while authentication is off. The local stack does not need to be published to the network.
+1. Set `AUTH_ENABLED=true` and create a client key with `./e.sh client-key create --label <name>` (one with no scope, or with the `peers` operation); peering refuses while authentication is off. The local stack does not need to be published to the network.
 2. Obtain from the SaaS side the key its accept-only row was minted with (`KEY_FROM_SAAS`).
 3. Pair:
 
@@ -29,6 +24,6 @@ The SaaS side of the pairing is a call to the SaaS engine's peer routes with a c
    ./e.sh peer add https://<your SaaS engine's address> --peer-token "$KEY_FROM_SAAS"
    ```
 
-4. Share and accept as in [stacks in a mesh](../stacks-in-a-mesh/), steps 4 to 6: share on whichever side offers, accept on the other, and run `./e.sh peer sync <peer id>` from the local stack.
+4. Share and accept as in [stacks in a mesh](stacks-in-a-mesh.md), steps 4 to 6: share on whichever side offers, accept on the other, and run `./e.sh peer sync <peer id>` from the local stack.
 
 The local stack reads and writes with no connection; when it reconnects, the next exchange (on the schedule, or `peer sync`) carries what both sides missed.

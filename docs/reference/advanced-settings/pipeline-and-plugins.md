@@ -1,20 +1,15 @@
----
-title: "Pipeline and Plugins"
-sidebar_position: 1
-kind: reference
-status: drafted
-verified_against: null
-lede: "Ingest is a named sequence of components, read from conf/profiles.yaml. Some of those components are extractor plugins: separate services, declared in conf/plugins.yaml, that read a record's content and return tags."
----
+# Pipeline and Plugins
+
+Ingest is a named sequence of components, read from conf/profiles.yaml. Some of those components are extractor plugins: separate services, declared in conf/plugins.yaml, that read a record's content and return tags.
 
 ## The ingest pipeline
 
-The pipeline is a list of component names in a pipeline profile in `conf/profiles.yaml`, selected by `PIPELINE_PROFILE` (see [profiles](../profiles/)). The shipped default, `retrieval_v1`, runs ingest in this order:
+The pipeline is a list of component names in a pipeline profile in `conf/profiles.yaml`, selected by `PIPELINE_PROFILE` (see [profiles](profiles.md)). The shipped default, `retrieval_v1`, runs ingest in this order:
 
 | Component | Does |
 |---|---|
 | `validate` | Computes the content hash |
-| `persist` | Writes the record and its `sr_ingested` [audit](../../../durability/the-audit-log/) event |
+| `persist` | Writes the record and its `sr_ingested` [audit](../../durability/the-audit-log.md) event |
 | `agent_properties` | Writes the edge properties the caller supplied |
 | `plugin_wordnet` | Returns the content's words, each lemmatized and given a WordNet category |
 | `plugin_chrono` | Returns the dates, times and date ranges the content mentions, through chrono-node |

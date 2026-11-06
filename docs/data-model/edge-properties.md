@@ -1,13 +1,8 @@
----
-title: "Edge Properties"
-sidebar_position: 2
-kind: concept
-status: drafted
-verified_against: null
-lede: "Agents need to ask memory exact questions — every record about Acme, how many records mention the renewal — that meaning alone cannot answer. Edge properties put label:value pairs on records; every record sharing a value is joined by one edge, with no graph database to run; records are gathered by intersecting or uniting those edges, or walked from one to the next; a lane's source types can hold agents to one vocabulary; and every change to a record's edge properties is kept as a new version."
----
+# Edge Properties
 
-Challenges addressed: [Auditable Decision-Making](../../use-cases/auditing-agentic-decisions/), [Context Window Limits and Lossy Compaction](../../use-cases/beyond-the-context-window/), [Tracking Changes Through Time](../../use-cases/data-evolution/), [Point-in-Time Recall](../../use-cases/what-was-true-when/), [Multi-Agent Coordination](../../use-cases/agent-swarm-coordination/).
+Agents need to ask memory exact questions — every record about Acme, how many records mention the renewal — that meaning alone cannot answer. Edge properties put label:value pairs on records; every record sharing a value is joined by one edge, with no graph database to run; records are gathered by intersecting or uniting those edges, or walked from one to the next; a lane's source types can hold agents to one vocabulary; and every change to a record's edge properties is kept as a new version.
+
+Challenges addressed: [Auditable Decision-Making](../use-cases/auditing-agentic-decisions.md), [Context Window Limits and Lossy Compaction](../use-cases/beyond-the-context-window.md), [Tracking Changes Through Time](../use-cases/data-evolution.md), [Point-in-Time Recall](../use-cases/what-was-true-when.md), [Multi-Agent Coordination](../use-cases/agent-swarm-coordination.md).
 
 ## Concepts
 
@@ -17,9 +12,9 @@ Every source record carries **edge properties**: `label:value` pairs like `perso
 
 In an ordinary graph an edge joins exactly two nodes. Here a single label like `person:Sarah` is **one N-ary edge that touches every record about Sarah at once** — five records, five hundred, it does not matter. One label, one edge, N members.
 
-There is no separate edge table. The shared value is the edge. The records are the vertices and the edge properties are the edges of the **Edge Property Graph (EPG)**. It is a **hypergraph**: each edge property is a hyperedge joining every record that carries it, held in PostgreSQL without a graph database. See [the EPG](../../architecture/edge-property-graph/).
+There is no separate edge table. The shared value is the edge. The records are the vertices and the edge properties are the edges of the **Edge Property Graph (EPG)**. It is a **hypergraph**: each edge property is a hyperedge joining every record that carries it, held in PostgreSQL without a graph database. See [the EPG](../architecture/edge-property-graph.md).
 
-![Four records of different source types linked by the shared edge properties org:Acme, person:Sarah and topic:renewal](/img/shared-property.svg)
+![Four records of different source types linked by the shared edge properties org:Acme, person:Sarah and topic:renewal](../../static/img/shared-property.svg)
 
 Notice the records in the figure are different source types — a contact, a meeting, a deal, a report — and on their own they're inert. It's the shared labels (`person:Sarah`, `org:Acme`, `topic:renewal`) that weave them into one fabric: each common label is an N-ary edge touching every record that carries it. **Common labels connect records across types, sources, and sessions.** Stack a second label and you've walked from one set into its intersection.
 
@@ -27,8 +22,8 @@ Notice the records in the figure are different source types — a contact, a mee
 
 | Kind | What it says | Written by | Governed by |
 |---|---|---|---|
-| **Agent-specified** — any `label:value`, such as `org:Acme` | the records that share it have something in common: an **imputed** edge | the agent, with `e_ingest`, `e_update` and `e_property` `add` / `remove` | the [policy](../../governance/policies/): which labels a [lane](../../governance/lanes/) allows, through its [source types](../../governance/source-types/), and which lanes the [agent profile](../../governance/agent-profiles/) may write |
-| **Built-in** — the reserved labels `e_connect`, `e_group`, `e_adjustment` | someone declared a relation, a membership or an evolution: an **asserted** edge | the engine, which mints each value: [connections](../connections/) (`connect` / `disconnect`), [groups](../groups/) (`group` / `ungroup`), [adjustments](../adjustments/) (`adjusts` / `unadjust`) | the engine: these labels cannot be written or removed any other way |
+| **Agent-specified** — any `label:value`, such as `org:Acme` | the records that share it have something in common: an **imputed** edge | the agent, with `e_ingest`, `e_update` and `e_property` `add` / `remove` | the [policy](../governance/policies.md): which labels a [lane](../governance/lanes.md) allows, through its [source types](../governance/source-types.md), and which lanes the [agent profile](../governance/agent-profiles.md) may write |
+| **Built-in** — the reserved labels `e_connect`, `e_group`, `e_adjustment` | someone declared a relation, a membership or an evolution: an **asserted** edge | the engine, which mints each value: [connections](connections.md) (`connect` / `disconnect`), [groups](groups.md) (`group` / `ungroup`), [adjustments](adjustments.md) (`adjusts` / `unadjust`) | the engine: these labels cannot be written or removed any other way |
 
 An imputed edge is an inference: it says records have something in common, not what passed between them. A built-in edge is an assertion. The agent instructions the engine ships keep the two apart: `person:John` written on Sarah's record reads exactly like a record about John, so a relation between them belongs in a connection.
 
@@ -39,22 +34,22 @@ Several idioms are built on that one mechanism.
 | Idiom | How it is written | Members | See |
 |---|---|---|---|
 | Agentic annotation | The caller's edge properties, on `e_ingest`, `e_update` or `e_property` `add` | Every record that carries the value | This page |
-| Adjustment (linked list) | `e_ingest` with `adjusts`: the engine mints `e_adjustment:<label>_<32 hex>` and writes it on the new record and on each record it adjusts. Adjusting the newer record again adds the next link | The new record and the records it adjusts; a chain of links over time | [Updates and adjustments](../../agents-how-to/evolving-a-fact/) |
-| Connection (1-to-1) | `e_property` `connect`: `e_connect:<hint>_<32 hex>` | Exactly two | [Connections](../connections/) |
-| Group (membership) | `e_property` `group`: `e_group:<hint>_<32 hex>` | Two or more | [Groups](../groups/) |
-| File hierarchy | Folder Intake writes `folder_id` on the folder's record and each file's record, and `file_id` on a file's record and each of its parts | A folder's records; a file's record and its parts | [Documents and files](../../use-cases/beyond-the-context-window/#documents-and-files) |
+| Adjustment (linked list) | `e_ingest` with `adjusts`: the engine mints `e_adjustment:<label>_<32 hex>` and writes it on the new record and on each record it adjusts. Adjusting the newer record again adds the next link | The new record and the records it adjusts; a chain of links over time | [Updates and adjustments](../agents-how-to/evolving-a-fact.md) |
+| Connection (1-to-1) | `e_property` `connect`: `e_connect:<hint>_<32 hex>` | Exactly two | [Connections](connections.md) |
+| Group (membership) | `e_property` `group`: `e_group:<hint>_<32 hex>` | Two or more | [Groups](groups.md) |
+| File hierarchy | Folder Intake writes `folder_id` on the folder's record and each file's record, and `file_id` on a file's record and each of its parts | A folder's records; a file's record and its parts | [Documents and files](../use-cases/beyond-the-context-window.md#documents-and-files) |
 
-`e_adjustment` values do not appear in `e_property` listings or in `intersect` and `union`; `e_read` shows them under `adjustments`, and `traverse` walks them. A [correction](../../agents-how-to/correcting-a-record/) is not an edge property: it is a separate object attached to its record.
+`e_adjustment` values do not appear in `e_property` listings or in `intersect` and `union`; `e_read` shows them under `adjustments`, and `traverse` walks them. A [correction](../agents-how-to/correcting-a-record.md) is not an edge property: it is a separate object attached to its record.
 
 ## Hygiene, and source types
 
 Edge properties are the connection construct, so their hygiene matters: it is what lets agents curate, connect and manage records predictably. `org:Acme` and `company:Acme` are different edge properties and form no edge.
 
-The optional **source type** exists for that reason. A lane that declares source types is closed: each source type names the labels a record of that type may carry, and a write with any other label is refused. That keeps the labels from sprawling. Source types and their labels are declared in the [policy](../../governance/policies/), not in code.
+The optional **source type** exists for that reason. A lane that declares source types is closed: each source type names the labels a record of that type may carry, and a write with any other label is refused. That keeps the labels from sprawling. Source types and their labels are declared in the [policy](../governance/policies.md), not in code.
 
 ## Queries are set operations
 
-Each edge property is a set of records. A query can **intersect** sets (records that carry every one), **union** them (any one), or run them as a **timeline** (the same sets, ordered by time). **Traverse** starts at one record and walks its edges to the records that share them. See [the EPG](../../architecture/edge-property-graph/) and [temporal retrieval](../../agents-how-to/using-the-timeline/).
+Each edge property is a set of records. A query can **intersect** sets (records that carry every one), **union** them (any one), or run them as a **timeline** (the same sets, ordered by time). **Traverse** starts at one record and walks its edges to the records that share them. See [the EPG](../architecture/edge-property-graph.md) and [temporal retrieval](../agents-how-to/using-the-timeline.md).
 
 ## Where edge properties come from
 
@@ -67,7 +62,7 @@ An edge property is written as one string. The engine splits it at the first col
 
 ## Edge Property Lifecycle
 
-Declared edge properties — the caller's, and the reserved values for connections, groups and adjustments — are part of each entry in the record's [ledger](../source-records/#a-record-is-a-ledger). The edge-property table that retrieval reads is a cache of the latest entry. A declared edge property's id is derived from the fact it states: `ep_` and the first 32 hexadecimal characters of a SHA-256 over the record id, schema, label and value, so every engine projecting the same entry gives it the same id. Tags are not in the ledger; they are an index over the content.
+Declared edge properties — the caller's, and the reserved values for connections, groups and adjustments — are part of each entry in the record's [ledger](source-records.md#a-record-is-a-ledger). The edge-property table that retrieval reads is a cache of the latest entry. A declared edge property's id is derived from the fact it states: `ep_` and the first 32 hexadecimal characters of a SHA-256 over the record id, schema, label and value, so every engine projecting the same entry gives it the same id. Tags are not in the ledger; they are an index over the content.
 
 A record's edge properties are part of its whole state. Every change to them writes a new version of the record, and every earlier version is kept in the record's history.
 
@@ -81,7 +76,7 @@ A record's edge properties are part of its whole state. Every change to them wri
 
 An update that changes nothing writes nothing. Earlier versions are read with `e_audit` `inspect` on the update's event.
 
-**Reserved labels.** The `e_*` labels are written only by the engine: `connect`, `group` and `e_ingest` `adjusts` write them, and `disconnect`, `ungroup` and `unadjust` remove them. `e_ingest`, `e_update`, `e_property` `add` and `e_property` `remove` refuse them. See [connections](../connections/#writing-and-removing-a-connection) and [groups](../groups/#writing-and-removing-a-group).
+**Reserved labels.** The `e_*` labels are written only by the engine: `connect`, `group` and `e_ingest` `adjusts` write them, and `disconnect`, `ungroup` and `unadjust` remove them. `e_ingest`, `e_update`, `e_property` `add` and `e_property` `remove` refuse them. See [connections](connections.md#writing-and-removing-a-connection) and [groups](groups.md#writing-and-removing-a-group).
 
 
 ## Example
@@ -111,4 +106,4 @@ e_gather {"action": "intersect", "match": ["org:Acme", "topic:renewal"]}
 
 ## Reference
 
-The tools, their arguments and their refusals: [`e_ingest`](../../reference/tools/e_ingest/), [`e_property`](../../reference/tools/e_property/) and [`e_gather`](../../reference/tools/e_gather/).
+The tools, their arguments and their refusals: [`e_ingest`](../reference/tools/e_ingest.md), [`e_property`](../reference/tools/e_property.md) and [`e_gather`](../reference/tools/e_gather.md).

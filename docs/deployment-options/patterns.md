@@ -1,11 +1,6 @@
----
-title: "Patterns Built on the Mesh"
-sidebar_position: 5
-kind: concept
-status: drafted
-verified_against: "core 1.2.8"
-lede: "A realm of reference memory, a collector for audit and tracking, reporting, work groups, and travel: each built from sharing, accepting and agent profiles."
----
+# Patterns Built on the Mesh
+
+A realm of reference memory, a collector for audit and tracking, reporting, work groups, and travel: each built from sharing, accepting and agent profiles.
 
 Every pattern below uses the same two choices — an owner **shares** a policy, a peer **accepts** it — and the same agent profiles. Combine them freely: one engine can be in several patterns at once.
 
@@ -37,7 +32,7 @@ flowchart LR
 
 ## Reporting
 
-A reporting engine accepts what the reports need and gives its agents and programs read-only profiles. Dashboards follow changes live through its [change feed](../../observability/change-feed/), with no load on the sites that wrote them.
+A reporting engine accepts what the reports need and gives its agents and programs read-only profiles. Dashboards follow changes live through its [change feed](../observability/change-feed.md), with no load on the sites that wrote them.
 
 ```mermaid
 flowchart LR

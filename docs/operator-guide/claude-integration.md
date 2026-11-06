@@ -1,21 +1,16 @@
----
-title: "Claude Integration"
-sidebar_position: 2
-kind: how-to
-status: drafted
-verified_against: null
-lede: "Connect Claude Code, Claude Desktop and claude.ai to an eMemory stack over MCP: the endpoint, the client key, the agent profile, and a first check that the tools appear."
----
+# Claude Integration
+
+Connect Claude Code, Claude Desktop and claude.ai to an eMemory stack over MCP: the endpoint, the client key, the agent profile, and a first check that the tools appear.
 
 ## What the engine expects
 
 | | |
 |---|---|
 | Endpoint | `http://localhost:8765/mcp` for a stack on this machine (streamable HTTP); `https://<your host>/mcp` for a stack published over HTTPS |
-| Credential | With `AUTH_ENABLED=true`, the header `Authorization: Bearer <client key>`, where the key's SHA-256 hash is in `API_KEY_HASH_LIST`. With authentication off, no header |
-| Agent profile | Named per call with the `agent_profile` argument; a call that names none runs as the engine's default agent profile. Tell the agent which to use in its instructions or a skill |
+| Credential | With `AUTH_ENABLED=true`, the header `Authorization: Bearer <client key>`, where the key has an entry in `conf/keys.yaml`. With authentication off, no header |
+| Agent profile | Named per call with the `agent_profile` argument; a call that names none runs as the engine's default agent profile. A key scoped to profiles acts only as those. Tell the agent which to use in its instructions or a skill |
 
-Mint a client key: see [client keys](../connecting-clients-and-operating/#client-keys).
+Create a client key: see [client keys](connecting-clients-and-operating.md#client-keys).
 
 ## Claude Code
 
@@ -42,9 +37,9 @@ Leave out `--header` while authentication is off. `--scope project` writes the e
 }
 ```
 
-Name the server `everythingmemory`: the [agent skills](../agent-skills/) plugin's permission examples use that name (`mcp__everythingmemory__*`).
+Name the server `everythingmemory`: the [agent skills](agent-skills.md) plugin's permission examples use that name (`mcp__everythingmemory__*`).
 
-Install the skills plugin as described in [agent skills](../agent-skills/).
+Install the skills plugin as described in [agent skills](agent-skills.md).
 
 ## Claude Desktop and claude.ai
 
@@ -52,7 +47,7 @@ Both reach remote MCP servers as **custom connectors**, and a custom connector i
 
 1. In Claude, open **Settings › Connectors** and add a custom connector.
 2. URL: `https://<your host>/mcp`.
-3. Credential: under request headers, `Authorization: Bearer <client key>`; or sign in with OAuth — see [authentication with eMemory SaaS](../auth-ememory-saas/) and [authentication with your own identity provider](../auth-own-identity-provider/).
+3. Credential: under request headers, `Authorization: Bearer <client key>`; or sign in with OAuth — see [authentication with eMemory SaaS](auth-ememory-saas.md) and [authentication with your own identity provider](auth-own-identity-provider.md).
 
 Custom connectors are available on all Claude plans; on Free, one. Source: Anthropic, [Get started with custom connectors using remote MCP](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp).
 

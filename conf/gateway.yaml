@@ -3,7 +3,7 @@
 # (LiteLLM reads its config once, at start).
 #
 # WHAT THE ENGINE NEEDS FROM IT: an OpenAI-compatible endpoint at
-#   EMBEDDING_BASE_URL = http://gateway:4000/v1        (local.env)
+#   EMBEDDING_BASE_URL = http://gateway:4000/v1        (.env)
 # serving one route whose `model_name` is EMBEDDING_MODEL, and that route's
 # WIDTH declared as `model_info.output_vector_size`. The engine reads the width
 # from GET /v1/model/info and embeds nothing without it — there is no default.
@@ -39,7 +39,7 @@ model_list:
 
   # THE SWITCH: OpenAI's text-embedding-3-small through OpenRouter. To use it,
   # set OPENROUTER_API_KEY in gateway.env (from gateway.env.template), and in
-  # local.env set EMBEDDING_MODEL=text-embedding-3-small. It has no task
+  # .env set EMBEDDING_MODEL=text-embedding-3-small. It has no task
   # prefixes. A new model is a new embedding space: the sweep re-embeds the
   # whole corpus into it.
   - model_name: text-embedding-3-small

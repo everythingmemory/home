@@ -1,13 +1,8 @@
----
-title: "Audit Log"
-sidebar_position: 2
-kind: concept
-status: drafted
-verified_against: null
-lede: "Anyone who must account for what agents did — an auditor, an operator, a reviewer — needs more than what the memory says now: who wrote each record, who corrected it, who deleted the one beside it, and when. The audit log writes an event for each change a tool makes to a record, in the same transaction as the change, naming the record, lane, agent profile and engine; keeps every event, even after the record is deleted; traces any record's history, with its content before and after each update; and carries each engine's events to its peers under their origin."
----
+# Audit Log
 
-Challenges addressed: [Auditable Decision-Making](../../use-cases/auditing-agentic-decisions/), [Tracking Changes Through Time](../../use-cases/data-evolution/), [Point-in-Time Recall](../../use-cases/what-was-true-when/), [Multi-Agent Coordination](../../use-cases/agent-swarm-coordination/).
+Anyone who must account for what agents did — an auditor, an operator, a reviewer — needs more than what the memory says now: who wrote each record, who corrected it, who deleted the one beside it, and when. The audit log writes an event for each change a tool makes to a record, in the same transaction as the change, naming the record, lane, agent profile and engine; keeps every event, even after the record is deleted; traces any record's history, with its content before and after each update; and carries each engine's events to its peers under their origin.
+
+Challenges addressed: [Auditable Decision-Making](../use-cases/auditing-agentic-decisions.md), [Tracking Changes Through Time](../use-cases/data-evolution.md), [Point-in-Time Recall](../use-cases/what-was-true-when.md), [Multi-Agent Coordination](../use-cases/agent-swarm-coordination.md).
 
 ## Concepts
 
@@ -75,9 +70,9 @@ The second event is shortened here; it carries the same fields as the first.
 Add `"expand": true` and the reply also carries the record itself, each correction in full, and the records linked by adjustment. `action: "list"` filters events by record, lane, agent profile, type, source or date. `action: "inspect"` opens one event by `log_id`; for an `sr_updated` event it returns the content before and after. `action: "history"` lists every state a record has had, newest first, up to `as_of`.
 
 ## Implications
-**You audit what you can read.** `e_audit` returns only events in lanes the agent profile named on the call can read. The caller chooses that agent profile. See [lanes, agent profiles and policies](../../governance/lanes/).
+**You audit what you can read.** `e_audit` returns only events in lanes the agent profile named on the call can read. The caller chooses that agent profile. See [lanes, agent profiles and policies](../governance/lanes.md).
 
-**The trail outlives the record.** A trace of a deleted record returns its events, ending in `sr_deleted` with the content hash and authority the record had. If the record was ever updated, `inspect` on one of its `sr_updated` events still returns the version before and the version after, content included. See [tombstones](../../agents-how-to/deleting-a-record/).
+**The trail outlives the record.** A trace of a deleted record returns its events, ending in `sr_deleted` with the content hash and authority the record had. If the record was ever updated, `inspect` on one of its `sr_updated` events still returns the version before and the version after, content included. See [tombstones](../agents-how-to/deleting-a-record.md).
 
 **The archive holds a copy.** When an archive is configured, events are written to it in hourly files, one set per recording engine.
 
@@ -87,4 +82,4 @@ Add `"expand": true` and the reply also carries the record itself, each correcti
 
 ## Reference
 
-The tool, its arguments and its refusals: [`e_audit`](../../reference/tools/e_audit/). The feed: [the change feed](../../observability/change-feed/).
+The tool, its arguments and its refusals: [`e_audit`](../reference/tools/e_audit.md). The feed: [the change feed](../observability/change-feed.md).

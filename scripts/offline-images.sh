@@ -20,7 +20,7 @@
 # `service <TAB> reference <TAB> saved name <TAB> layers`,
 # the layers being the image's content (its layer diff ids), the same on any
 # Docker. Compose args (default
-# `-f docker-compose.yml`) choose the files; local.env must be in place, as
+# `-f docker-compose.yml`) choose the files; .env must be in place, as
 # for `up`. Needs python3.
 #
 # LOAD runs on the offline machine, in the repository root, with nothing but
@@ -29,7 +29,7 @@
 # docker-compose.images.yml — an overlay naming each service's image by the
 # name and tag it was saved under, never pulled. Start the stack with it:
 #
-#   COMPOSE_FILE=docker-compose.yml:docker-compose.images.yml   (in local.env)
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.images.yml   (in .env)
 #
 # WHY AN OVERLAY. The compose file pins third-party images by registry digest
 # (`name:tag@sha256:…`). A loaded image does not carry its registry digest on

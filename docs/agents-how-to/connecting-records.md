@@ -1,14 +1,9 @@
----
-title: "Connecting Records"
-sidebar_position: 10
-kind: how-to
-status: drafted
-verified_against: null
-lede: "Assert a named relation between exactly two records with e_property connect. It is all-or-nothing: if either record cannot be written, nothing is written."
----
+# Connecting Records
+
+Assert a named relation between exactly two records with e_property connect. It is all-or-nothing: if either record cannot be written, nothing is written.
 
 ## When to Use
-When a relation between two records is a fact in itself — the contract was signed by Sarah — and not just something they have in common. What a connection is: [connections](../../data-model/connections/).
+When a relation between two records is a fact in itself — the contract was signed by Sarah — and not just something they have in common. What a connection is: [connections](../data-model/connections.md).
 
 ## Usage
 ```text

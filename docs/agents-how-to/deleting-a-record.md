@@ -1,18 +1,13 @@
----
-title: "Deleting a Record"
-sidebar_position: 12
-kind: how-to
-status: drafted
-verified_against: null
-lede: "Take a record out of retrieval with e_system delete, bring it back with undelete, or remove some of its edge properties. A deletion is local to this engine and keeps the record's history."
----
+# Deleting a Record
+
+Take a record out of retrieval with e_system delete, bring it back with undelete, or remove some of its edge properties. A deletion is local to this engine and keeps the record's history.
 
 ## When to Use
 
-When a record, or an edge property on it, should no longer be found. It is rarely the right first move: a record that was wrong takes a [correction](../correcting-a-record/), and one that has changed takes an [adjustment](../evolving-a-fact/).
+When a record, or an edge property on it, should no longer be found. It is rarely the right first move: a record that was wrong takes a [correction](correcting-a-record.md), and one that has changed takes an [adjustment](evolving-a-fact.md).
 
 :::warning
-Record deletes and undeletes are off as shipped. The engine's owner turns them on with `deletions_enabled` in `conf/settings.yaml` and restarts the engine. Off, both are refused with: *deletions are off on this engine: conf/settings.yaml `deletions_enabled` is false. Its owner turns it on and restarts the engine; nothing was deleted.* Removing an edge property is always allowed. See [deletion switch](../../governance/deletion-switch/).
+Record deletes and undeletes are off as shipped. The engine's owner turns them on with `deletions_enabled` in `conf/settings.yaml` and restarts the engine. Off, both are refused with: *deletions are off on this engine: conf/settings.yaml `deletions_enabled` is false. Its owner turns it on and restarts the engine; nothing was deleted.* Removing an edge property is always allowed. See [deletion switch](../governance/deletion-switch.md).
 :::
 
 ## Usage

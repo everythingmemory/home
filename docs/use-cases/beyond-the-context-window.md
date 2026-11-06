@@ -1,24 +1,19 @@
----
-title: "Context Window Limits and Lossy Compaction"
-sidebar_position: 2
-kind: concept
-status: drafted
-verified_against: null
-lede: "Agents working from a team's documents, an organisation's records or a year of their own work need more data than a context window holds, and when the window fills, compaction summarises it and drops the details: the exact figure, name, date or reason for a decision. Everything Memory keeps records outside the window, whole and as written; lets an agent find records by meaning, edge property or time and load only those; serves the same records across sessions, agents and models; and turns a folder of documents into records whole."
----
+# Context Window Limits and Lossy Compaction
+
+Agents working from a team's documents, an organisation's records or a year of their own work need more data than a context window holds, and when the window fills, compaction summarises it and drops the details: the exact figure, name, date or reason for a decision. Everything Memory keeps records outside the window, whole and as written; lets an agent find records by meaning, edge property or time and load only those; serves the same records across sessions, agents and models; and turns a folder of documents into records whole.
 
 ## Approach
 Data held in a context window, or loaded into it from files, is bounded by the window and gone when the session ends, and what compaction summarised away cannot be recovered from the summary.
 
-- **The memory is a database.** Records live in PostgreSQL, bounded by the database, not by a context window. A record can be a sentence, a document, a large JSON object or one part of a file. See [source records](../../data-model/source-records/).
-- **The agent loads only what it needs.** It finds records by meaning ([search](../../agents-how-to/finding-records/)), by [edge property](../../data-model/edge-properties/) (`intersect`, `union`, `traverse`) or by [time](../../agents-how-to/using-the-timeline/), then reads only those with [`e_read`](../../agents-how-to/reading-a-record/).
+- **The memory is a database.** Records live in PostgreSQL, bounded by the database, not by a context window. A record can be a sentence, a document, a large JSON object or one part of a file. See [source records](../data-model/source-records.md).
+- **The agent loads only what it needs.** It finds records by meaning ([search](../agents-how-to/finding-records.md)), by [edge property](../data-model/edge-properties.md) (`intersect`, `union`, `traverse`) or by [time](../agents-how-to/using-the-timeline.md), then reads only those with [`e_read`](../agents-how-to/reading-a-record.md).
 - **Nothing is summarised away.** A record is stored as written and stays that way; compaction in the agent's session no longer costs it anything, because the details are in the memory, not in the window.
 - **It persists across sessions, agents and models.** Any agent whose client speaks MCP reaches the same memory. At the start of a session an agent can list what was written most recently and the labels in use.
 - **Documents come in whole.** Folder Intake turns a folder into records, described below.
 
 ## Documents and files
 
-Not everything worth remembering arrives through a tool call. One command, `e.sh ingest`, turns a folder of documents into memory — verbatim, in the formats you already have. It runs on the machine that holds the files and writes to the engine over its REST API, as the profile `folder_intake`, into the lane `files`; both come from the shipped [`files` policy](../../governance/policies/#an-example-the-files-policy), installed first.
+Not everything worth remembering arrives through a tool call. One command, `e.sh ingest`, turns a folder of documents into memory — verbatim, in the formats you already have. It runs on the machine that holds the files and writes to the engine over its REST API, as the profile `folder_intake`, into the lane `files`; both come from the shipped [`files` policy](../governance/policies.md#an-example-the-files-policy), installed first.
 
 1. It walks the folder, skipping names that start with a dot.
 2. It converts each file to text: PDF, Word (`.docx`), Excel (`.xlsx`) and HTML by converter; text, Markdown, CSV, JSON, YAML and code as they are. Anything without a converter is refused by name rather than smuggled in as a blob.
@@ -59,4 +54,4 @@ e_gather {"action": "intersect", "match": ["folder:Acme"]}
 e_read {"sr_ids": ["<an sr_id from the result>"]}
 ```
 
-To stamp the records with your own labels, such as `matter:acme`, see [adding your own stamps](../../governance/policies/#an-example-the-files-policy).
+To stamp the records with your own labels, such as `matter:acme`, see [adding your own stamps](../governance/policies.md#an-example-the-files-policy).

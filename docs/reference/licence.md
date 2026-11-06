@@ -1,11 +1,6 @@
----
-title: "Licence"
-sidebar_position: 98
-kind: reference
-status: drafted
-verified_against: null
-lede: "The terms under which Everything Memory may be used: the Business Source License 1.1 for the engine and the console, and Apache 2.0 for the on-ramps."
----
+# Licence
+
+The terms under which Everything Memory may be used: the Business Source License 1.1 for the engine and the console, and Apache 2.0 for the on-ramps.
 
 ConcurAI holds the copyright and the trademark in Everything Memory, and is the licensor.
 

@@ -1,17 +1,12 @@
----
-title: "Point-in-Time Recall"
-sidebar_position: 4
-kind: concept
-status: drafted
-verified_against: null
-lede: "Some questions about stored data are about time, not topic: what was recorded about Acme last week, what is due in March, what a record said before it was updated, and when it was found to be wrong; answering them needs every version and change kept with its time. Everything Memory returns what was recorded in any window, in time order; orders records by the dates their content names; keeps every earlier version in a record's ledger; and lists each correction and adjustment in order, with its time."
----
+# Point-in-Time Recall
+
+Some questions about stored data are about time, not topic: what was recorded about Acme last week, what is due in March, what a record said before it was updated, and when it was found to be wrong; answering them needs every version and change kept with its time. Everything Memory returns what was recorded in any window, in time order; orders records by the dates their content names; keeps every earlier version in a record's ledger; and lists each correction and adjustment in order, with its time.
 
 ## What can be answered today, and how
 
 | Question | How |
 |---|---|
-| What was recorded in a period | `e_timeline` returns what was recorded in any window, in time order: [`e_timeline`](../../agents-how-to/using-the-timeline/) with a window on ingest time (`start_date`, `end_date`) |
+| What was recorded in a period | `e_timeline` returns what was recorded in any window, in time order: [`e_timeline`](../agents-how-to/using-the-timeline.md) with a window on ingest time (`start_date`, `end_date`) |
 | What names a date in a period | `e_timeline` ordered by content time: the dates the records' content names, read by the date extractor at ingest |
 | What a record said before it was updated | Every earlier version is kept in the record's ledger; `e_audit` `inspect` on an update's event returns the content before and after it |
 | What a record said at a given time | `e_read` with `as_of` returns each record as it stood then |

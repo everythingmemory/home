@@ -1,13 +1,8 @@
----
-title: "OpenClaw Integration"
-sidebar_position: 5
-kind: how-to
-status: drafted
-verified_against: null
-lede: "Connect OpenClaw to an eMemory stack as a remote MCP server, with the client key as a header."
----
+# OpenClaw Integration
 
-The endpoint, client key and agent profile are as in [Claude integration](../claude-integration/#what-the-engine-expects).
+Connect OpenClaw to an eMemory stack as a remote MCP server, with the client key as a header.
+
+The endpoint, client key and agent profile are as in [Claude integration](claude-integration.md#what-the-engine-expects).
 
 ## Configuration
 

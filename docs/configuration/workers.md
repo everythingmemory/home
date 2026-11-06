@@ -1,17 +1,12 @@
----
-title: "Workers and scheduled jobs"
-sidebar_position: 6
-kind: reference
-status: drafted
-verified_against: null
-lede: "The background workers and the scheduled jobs they run."
----
+# Workers and scheduled jobs
+
+The background workers and the scheduled jobs they run.
 
 | Setting | Engine default | Shipped | What it does |
 |---|---|---|---|
-| `REDIS_PASSWORD` | empty | empty; required | The job queue's password. `docker compose up` refuses to start without it; the engine and every worker carry it |
+| `REDIS_PASSWORD` | empty | empty; required | The job queue's password. `docker compose up` refuses to start without it; the engine and every worker carry it. `./e.sh init` generates it as hex, so it needs no quoting |
 | `EMEMORY_PORT`, `CONSOLE_PORT`, `EMEMORY_NETWORK` | — | `8765`, `8766`, `ememory` | The host ports of the engine and the console (both on 127.0.0.1) and the name of the stack's Docker network. Change them only to run a second stack on one machine |
-| `CRON_ENABLED` | `false` | `true` | Runs the scheduled jobs: the embedding, tagging, archive and exchange sweeps |
+| `CRON_ENABLED` | `false` | `true` | Runs the scheduled jobs: the embedding, tagging, archive and exchange sweeps, and the restore from the archive |
 | `INGEST_WORKER_MAX_JOBS` | `5` | — | How many records the ingest worker processes at once |
 | `ARCHIVE_WORKER_MAX_JOBS` | `10` | — | How many archive writes run at once |
 | `MAINTENANCE_WORKER_MAX_JOBS` | `5` | — | How many repair batches run at once |

@@ -1,16 +1,11 @@
----
-title: "Tracking Changes Through Time"
-sidebar_position: 3
-kind: concept
-status: drafted
-verified_against: null
-lede: "Anyone relying on stored data needs to know what is current and what came before, because real-world information changes: documents are revised, facts move on, and some turn out to have been wrong (a fact that changed is not a fact that was wrong). Everything Memory writes an update as a record's next version and keeps every earlier one; links an adjustment to the record it evolves; attaches a correction beside a record that was wrong; and takes a deleted record out of retrieval while keeping its tombstone and audit events."
----
+# Tracking Changes Through Time
+
+Anyone relying on stored data needs to know what is current and what came before, because real-world information changes: documents are revised, facts move on, and some turn out to have been wrong (a fact that changed is not a fact that was wrong). Everything Memory writes an update as a record's next version and keeps every earlier one; links an adjustment to the record it evolves; attaches a correction beside a record that was wrong; and takes a deleted record out of retrieval while keeping its tombstone and audit events.
 
 ## Approach
 A memory that overwrites loses what it used to say. One that only appends leaves the reader to guess which record is current.
 
-![Records recorded over time; later, a correction is attached to one and an adjustment links a newer record to another](/img/learning-timeline.svg)
+![Records recorded over time; later, a correction is attached to one and an adjustment links a newer record to another](../../static/img/learning-timeline.svg)
 
 Everything Memory is an epistemic data store: content changes only by update, and every earlier version is kept. Built-in journaling lets a model update a previously ingested fact or assertion using one of three mechanisms. **Adjustments** update an original source record that was not factually incorrect, but instead needed an update — to clarify, modify, record state changes — in a fully auditable way. **Corrections** let the model mark a source record as actually false; a correction can be retracted and replaced. **Tombstoning** moves a source record out of the knowledge base while leaving an audit trail behind. For a record that is itself an artifact — a plan, a status — an **update** writes its next version and keeps every earlier one.
 
@@ -22,7 +17,7 @@ Everything Memory is an epistemic data store: content changes only by update, an
 | The record was wrong | A **correction**, attached to the record with `e_correct` | The record as written, with the correction beside it |
 | The record should no longer be retrieved | A **deletion**, local to this engine and reversible with an undelete | The tombstone, the update ledger and the audit events |
 
-See [updates and adjustments](../../agents-how-to/evolving-a-fact/), [corrections](../../agents-how-to/correcting-a-record/) and [deletion and tombstones](../../agents-how-to/deleting-a-record/).
+See [updates and adjustments](../agents-how-to/evolving-a-fact.md), [corrections](../agents-how-to/correcting-a-record.md) and [deletion and tombstones](../agents-how-to/deleting-a-record.md).
 
 This is what makes memory accountable instead of just stored — every change is kept, never silently overwritten.
 

@@ -1,11 +1,6 @@
----
-title: "Sizing"
-sidebar_position: 1.5
-kind: reference
-status: drafted
-verified_against: "core 1.2.8, measured on one stack holding 4,203 records"
-lede: "What the stack needs from its machine: a fixed base for the services, and disk that grows with the records you keep. Measured on one stack; treat the per-record figures as a starting estimate and check your own with the commands at the end."
----
+# Sizing
+
+What the stack needs from its machine: a fixed base for the services, and disk that grows with the records you keep. Measured on one stack; treat the per-record figures as a starting estimate and check your own with the commands at the end.
 
 ## The base: the stack itself
 

@@ -1,11 +1,6 @@
----
-title: "Agent Guide"
-sidebar_position: 0
-kind: reference
-status: drafted
-verified_against: null
-lede: "Task guides for an agent: storing, updating, evolving, correcting, connecting and deleting records. Each says when to use it, the call, what comes back, and an example."
----
+# Agent Guide
+
+Task guides for an agent: storing, updating, evolving, correcting, connecting and deleting records. Each says when to use it, the call, what comes back, and an example.
 
 An agent reaches Everything Memory through ten tools over MCP. On connecting, it receives the engine's instructions and the description of each tool.
 
@@ -22,10 +17,19 @@ An agent reaches Everything Memory through ten tools over MCP. On connecting, it
 | `e_system` | Inspect agent profiles and lanes, and delete |
 | `e_policy` | Lists, downloads, uploads, enables and disables policies |
 
-Start with [a walkthrough](walkthrough/). The skills that teach an agent these tasks are installed by the operator — see [Agent Skills](../operator-guide/agent-skills/).
+Start with [a walkthrough](walkthrough.md). The skills that teach an agent these tasks are installed by the operator — see [Agent Skills](../operator-guide/agent-skills.md).
 
-Agents use the tools over MCP. Programs, scripts and tests can make the same calls over REST: set `EMEMORY_URL` to the engine's address (for example, the API service the [quickstart](../operator-guide/quickstart/) starts) and `EMEMORY_API_KEY` to a client key when authentication is on. Each page shows its REST equivalent.
+Agents use the tools over MCP. Programs, scripts and tests can make the same calls over REST: set `EMEMORY_URL` to the engine's address (for example, the API service the [quickstart](../operator-guide/quickstart.md) starts) and `EMEMORY_API_KEY` to a client key when authentication is on; a key scoped to profiles acts only as those. Each page shows its REST equivalent.
 
-import DocCardList from '@theme/DocCardList';
 
-<DocCardList />
+- [A Walkthrough](walkthrough.md)
+- [Storing a Record](storing-a-record.md)
+- [Finding Records](finding-records.md)
+- [Reading a Record](reading-a-record.md)
+- [Using the Timeline](using-the-timeline.md)
+- [Updating a Record](updating-a-record.md)
+- [Evolving a Fact](evolving-a-fact.md)
+- [Correcting a Record](correcting-a-record.md)
+- [Connecting Records](connecting-records.md)
+- [Grouping Records](grouping-records.md)
+- [Deleting a Record](deleting-a-record.md)

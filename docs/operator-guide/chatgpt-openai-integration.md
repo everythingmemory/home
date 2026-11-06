@@ -1,13 +1,8 @@
----
-title: "ChatGPT and OpenAI Integration"
-sidebar_position: 4
-kind: how-to
-status: drafted
-verified_against: null
-lede: "Connect ChatGPT and OpenAI's APIs to an eMemory stack over MCP: what each can reach, and the credential each can send."
----
+# ChatGPT and OpenAI Integration
 
-The endpoint, client key and agent profile are as in [Claude integration](../claude-integration/#what-the-engine-expects).
+Connect ChatGPT and OpenAI's APIs to an eMemory stack over MCP: what each can reach, and the credential each can send.
+
+The endpoint, client key and agent profile are as in [Claude integration](claude-integration.md#what-the-engine-expects).
 
 ## Which OpenAI surface can reach which stack
 
@@ -54,7 +49,7 @@ The `mcp` tool is called by OpenAI's servers, so the stack must be published ove
 
 ## ChatGPT
 
-In developer mode (Settings › Apps › Advanced settings), ChatGPT adds a remote MCP server as an app. It offers OAuth or no authentication, not a fixed client key. A self-hosted stack published to the internet must run with authentication on, so ChatGPT can connect only to an engine that offers OAuth: eMemory SaaS (see [authentication with eMemory SaaS](../auth-ememory-saas/)) or a stack configured for [your own identity provider](../auth-own-identity-provider/). Source: OpenAI, [ChatGPT developer mode](https://developers.openai.com/api/docs/guides/developer-mode).
+In developer mode (Settings › Apps › Advanced settings), ChatGPT adds a remote MCP server as an app. It offers OAuth or no authentication, not a fixed client key. A self-hosted stack published to the internet must run with authentication on, so ChatGPT can connect only to an engine that offers OAuth: eMemory SaaS (see [authentication with eMemory SaaS](auth-ememory-saas.md)) or a stack configured for [your own identity provider](auth-own-identity-provider.md). Source: OpenAI, [ChatGPT developer mode](https://developers.openai.com/api/docs/guides/developer-mode).
 
 ## First check
 

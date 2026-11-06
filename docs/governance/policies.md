@@ -1,20 +1,15 @@
----
-title: "Policies"
-sidebar_position: 1
-kind: concept
-status: drafted
-verified_against: null
-lede: "An owner running several agents on one engine needs rules about who reads and writes what, and needs to change them as the work changes, without code or migrations. A policy declares lanes, their source types and labels, and agent profiles in one YAML document; each upload is appended to the policy's ledger as an event; a change takes effect when it is uploaded; a lane, source type, label or agent profile is retired with enabled: false; and several policies can be enabled at once."
----
+# Policies
 
-Challenges addressed: [Auditable Decision-Making](../../use-cases/auditing-agentic-decisions/), [Multi-Agent Coordination](../../use-cases/agent-swarm-coordination/), [Enterprise Distributed Memory Requirements](../../use-cases/enterprise-memory-mesh/).
+An owner running several agents on one engine needs rules about who reads and writes what, and needs to change them as the work changes, without code or migrations. A policy declares lanes, their source types and labels, and agent profiles in one YAML document; each upload is appended to the policy's ledger as an event; a change takes effect when it is uploaded; a lane, source type, label or agent profile is retired with enabled: false; and several policies can be enabled at once.
+
+Challenges addressed: [Auditable Decision-Making](../use-cases/auditing-agentic-decisions.md), [Multi-Agent Coordination](../use-cases/agent-swarm-coordination.md), [Enterprise Distributed Memory Requirements](../use-cases/enterprise-memory-mesh.md).
 
 ## Concepts
 
 Everything Memory keeps its rules as data. A **policy** declares:
 
-- lanes, and the [source types](../source-types/) each lane accepts, with their labels;
-- [agent profiles](../agent-profiles/), with their home lane and grants.
+- lanes, and the [source types](source-types.md) each lane accepts, with their labels;
+- [agent profiles](agent-profiles.md), with their home lane and grants.
 
 ```yaml
 # lanes partition the memory; profiles get per-lane access
@@ -41,7 +36,7 @@ A policy is uploaded with `e_policy` or the REST API, by any caller the engine a
 ## Implications
 **A policy is a ledger.** Each upload is appended as an event, and the rules in force are computed from the events. Downloading a policy and uploading the edited document changes it in place. A lane, source type, label or agent profile is retired with `enabled: false`. An operator can purge a whole policy, which deletes its events.
 
-**Several policies can be enabled at once.** The engine applies them together. Two policies may declare same-named lanes; they are two lanes. A bare name that matches both in the caller's view is refused as ambiguous — name the lane by its [qualified label](../lanes/#lane-labels) or its UUID.
+**Several policies can be enabled at once.** The engine applies them together. Two policies may declare same-named lanes; they are two lanes. A bare name that matches both in the caller's view is refused as ambiguous — name the lane by its [qualified label](lanes.md#lane-labels) or its UUID.
 
 **Changing the rules needs no migration.** A new lane, source type or label takes effect when the policy is uploaded.
 
@@ -59,17 +54,17 @@ One listing shows every policy the engine knows — its NAME, UUID, SOURCE (`bui
 ./e.sh policy list --source shipped
 ```
 
-Installing a shipped policy is one command:
+The shipped policies are the release's optional ones, the files in `conf/policies/` (`files` and `shared`). Installing one is one command:
 
 ```bash
 ./e.sh policy install <name>
 ```
 
-Installing shares nothing with a peer: what crosses is decided per peer, as for any policy. See [peering](../peering/).
+Installing shares nothing with a peer: what crosses is decided per peer, as for any policy. See [peering](peering.md).
 
 ## An example: the `files` policy
 
-[Folder Intake](../../use-cases/beyond-the-context-window/#documents-and-files) writes the records of a watched folder. It needs a lane to write to, a source type for those records and a profile to write as, so it ships with this policy:
+[Folder Intake](../use-cases/beyond-the-context-window.md#documents-and-files) writes the records of a watched folder. It needs a lane to write to, a source type for those records and a profile to write as, so it ships with this policy:
 
 ```yaml
 policy_uuid: pol_files
@@ -153,4 +148,4 @@ Either way, the policy lists as `local` on the engine it was uploaded to.
 
 ## Reference
 
-The tool: [`e_policy`](../../reference/tools/e_policy/).
+The tool: [`e_policy`](../reference/tools/e_policy.md).

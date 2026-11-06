@@ -1,11 +1,6 @@
----
-title: "Agent Skills"
-sidebar_position: 3
-kind: reference
-status: drafted
-verified_against: null
-lede: "The stock skills teach an agent to use the tools well: when to store, how to choose edge properties, when to correct and when to adjust, and how to orient at the start of a session. They ship as a Claude Code plugin, and their text can be given to any agent."
----
+# Agent Skills
+
+The stock skills teach an agent to use the tools well: when to store, how to choose edge properties, when to correct and when to adjust, and how to orient at the start of a session. They ship as a Claude Code plugin, and their text can be given to any agent.
 
 ## What the skills are
 
@@ -44,7 +39,7 @@ claude plugin install ememory@everythingmemory
 
 Or, inside Claude Code, run `/plugin` and pick `ememory` from the `everythingmemory` marketplace. Installing eMemory never installs the plugin; it is your choice.
 
-Then connect the agent to the API service; see [connecting clients](../../operator-guide/connecting-clients-and-operating/).
+Then connect the agent to the API service; see [connecting clients](connecting-clients-and-operating.md).
 
 ## Other agents and harnesses
 
@@ -52,4 +47,4 @@ Every agent that connects over MCP receives the engine's instructions and the de
 
 ## Licence
 
-The skills, the orientation agent and the hooks are licensed under the Apache License 2.0. See [licence](../../reference/licence/).
+The skills, the orientation agent and the hooks are licensed under the Apache License 2.0. See [licence](../reference/licence.md).

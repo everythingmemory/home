@@ -1,18 +1,13 @@
----
-title: "Stacks in a Mesh"
-sidebar_position: 12
-kind: how-to
-status: drafted
-verified_against: null
-lede: "Peer two engines, share a policy from one, accept it on the other, check that it crossed, and revoke it."
----
+# Stacks in a Mesh
 
-The deployment option: [stacks in a mesh](../../deployment-options/stacks-in-a-mesh/). The concepts: [distributed mesh architecture](../../architecture/distributed-mesh-architecture/).
+Peer two engines, share a policy from one, accept it on the other, check that it crossed, and revoke it.
+
+The deployment option: [stacks in a mesh](../deployment-options/stacks-in-a-mesh.md). The concepts: [distributed mesh architecture](../architecture/distributed-mesh-architecture.md).
 
 ## Before you start
 
-- Two stacks, A and B, each started as in the [quickstart](../quickstart/).
-- On both: `AUTH_ENABLED=true`, a client key in `API_KEY_HASH_LIST`, and the API service published to the other (`COMPOSE_FILE=docker-compose.yml:docker-compose.open.yml`). Peering refuses while authentication is off.
+- Two stacks, A and B, each started as in the [quickstart](quickstart.md).
+- On both: `AUTH_ENABLED=true`, a client key in `conf/keys.yaml` (`./e.sh client-key create`) that may do `peers` work — a key with no scope may, and the API service published to the other (`COMPOSE_FILE=docker-compose.yml:docker-compose.open.yml`). Peering refuses while authentication is off.
 - `e.sh` on the operator's machine. Set, for whichever engine you are working on:
 
   ```bash

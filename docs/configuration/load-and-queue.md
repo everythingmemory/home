@@ -1,11 +1,6 @@
----
-title: "Load and queue thresholds"
-sidebar_position: 7
-kind: reference
-status: drafted
-verified_against: null
-lede: "When the engine slows its peers, defers repair work, or stops live change messages under load."
----
+# Load and queue thresholds
+
+When the engine slows its peers, defers repair work, or stops live change messages under load.
 
 | Setting | Engine default | Shipped | What it does |
 |---|---|---|---|

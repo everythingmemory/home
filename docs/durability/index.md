@@ -1,12 +1,6 @@
----
-title: "Durability"
-sidebar_position: 0
-kind: reference
-status: drafted
-verified_against: null
-lede: "What an engine keeps and where: the database, the archive in S3-compatible object storage, the audit log, and rebuilding an engine from the archive."
----
+# Durability
 
-import DocCardList from '@theme/DocCardList';
+What an engine keeps and where: the database, the archive in S3-compatible object storage, the audit log, and rebuilding an engine from the archive.
 
-<DocCardList />
+- [Archive and Restore](archive-and-restore.md)
+- [Audit Log](the-audit-log.md)

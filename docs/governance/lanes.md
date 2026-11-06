@@ -1,13 +1,8 @@
----
-title: "Lanes"
-sidebar_position: 3
-kind: concept
-status: drafted
-verified_against: null
-lede: "An owner needs to divide one memory into work areas and decide, for each, who reads and writes it, what its records may be and whether it ever leaves the engine. Lanes are declared in a policy; each is its UUID, so two lanes can share a name; agent profiles grant read and write lane by lane; a lane's source types close it to unlisted labels at write time; the shares of its policy decide whether its records cross to peers; and a shared name is shown qualified, never guessed."
----
+# Lanes
 
-Challenges addressed: [Auditable Decision-Making](../../use-cases/auditing-agentic-decisions/), [Multi-Agent Coordination](../../use-cases/agent-swarm-coordination/), [Enterprise Distributed Memory Requirements](../../use-cases/enterprise-memory-mesh/).
+An owner needs to divide one memory into work areas and decide, for each, who reads and writes it, what its records may be and whether it ever leaves the engine. Lanes are declared in a policy; each is its UUID, so two lanes can share a name; agent profiles grant read and write lane by lane; a lane's source types close it to unlisted labels at write time; the shares of its policy decide whether its records cross to peers; and a shared name is shown qualified, never guessed.
+
+Challenges addressed: [Auditable Decision-Making](../use-cases/auditing-agentic-decisions.md), [Multi-Agent Coordination](../use-cases/agent-swarm-coordination.md), [Enterprise Distributed Memory Requirements](../use-cases/enterprise-memory-mesh.md).
 
 ## Concepts
 
@@ -19,11 +14,11 @@ Everything that governs records is decided per lane:
 
 | Decided per lane | By |
 |---|---|
-| Who reads and writes | [Agent profiles](../agent-profiles/): a home lane, plus read and write grants on other lanes |
-| What a record may be and carry | The lane's [source types](../source-types/) and their labels. A lane with none is open |
-| What crosses the [mesh](../../architecture/distributed-mesh-architecture/) | A lane's records cross to a peer with the policy that declares the lane |
+| Who reads and writes | [Agent profiles](agent-profiles.md): a home lane, plus read and write grants on other lanes |
+| What a record may be and carry | The lane's [source types](source-types.md) and their labels. A lane with none is open |
+| What crosses the [mesh](../architecture/distributed-mesh-architecture.md) | A lane's records cross to a peer with the policy that declares the lane |
 
-A lane **is** its UUID (`lane_` followed by an identifier); its name is a label. Everything stored, compared or sent names a lane by its UUID — a record's lane, a grant, a home lane, what crosses to a peer. Lanes are declared in a [policy](../policies/). A new engine starts with one open lane, `default`.
+A lane **is** its UUID (`lane_` followed by an identifier); its name is a label. Everything stored, compared or sent names a lane by its UUID — a record's lane, a grant, a home lane, what crosses to a peer. Lanes are declared in a [policy](policies.md). A new engine starts with one open lane, `default`.
 
 ## Lane labels
 
@@ -40,7 +35,7 @@ A caller may type a full lane UUID, a qualified label, or a bare name unique in 
 
 The picture people recognise is the **swim lane**: a lane is a work area, and every record lives in exactly one. Lanes act as swim lanes: each can enforce its own source-type and label vocabulary (unlisted labels are rejected at write time), and every agent profile carries per-lane read and write grants — so teams stay in their own lane while shared lanes let them cross.
 
-![Lanes crm, ops and people, each holding its own records, linked across lanes by shared edge properties such as org:Acme](/img/lanes.svg)
+![Lanes crm, ops and people, each holding its own records, linked across lanes by shared edge properties such as org:Acme](../../static/img/lanes.svg)
 
 Records in different lanes are still linked by the edge properties they share. An agent profile that reads both lanes sees the link.
 
@@ -58,4 +53,4 @@ e_ingest {"content": "Acme signed the renewal on 2026-10-05.", "source_type": "c
 
 ## Reference
 
-Agent profiles: [agent profiles](../agent-profiles/). Declaring lanes: [policies](../policies/).
+Agent profiles: [agent profiles](agent-profiles.md). Declaring lanes: [policies](policies.md).

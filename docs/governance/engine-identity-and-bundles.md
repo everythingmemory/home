@@ -1,11 +1,6 @@
----
-title: "Engine Identity, Bundles and Take-over"
-sidebar_position: 6
-kind: how-to
-status: drafted
-verified_against: "core 1.2.8"
-lede: "A bundle is one file holding a whole memory — records with their full history, corrections, policies, the audit log and, optionally, the vectors. Export one to back up or move a memory; import it into another engine to restore it there or to add it to a memory that already has its own."
----
+# Engine Identity, Bundles and Take-over
+
+A bundle is one file holding a whole memory — records with their full history, corrections, policies, the audit log and, optionally, the vectors. Export one to back up or move a memory; import it into another engine to restore it there or to add it to a memory that already has its own.
 
 ## An engine's identity
 

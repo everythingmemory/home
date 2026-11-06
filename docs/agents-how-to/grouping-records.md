@@ -1,14 +1,9 @@
----
-title: "Grouping Records"
-sidebar_position: 11
-kind: how-to
-status: drafted
-verified_against: null
-lede: "Assert a named membership among two or more records with e_property group. It is best-effort: it writes what it can and reports what it skipped."
----
+# Grouping Records
+
+Assert a named membership among two or more records with e_property group. It is best-effort: it writes what it can and reports what it skipped.
 
 ## When to Use
-When several records belong together as one named thing — the records of one deal, the attendees of one meeting. A group of two is a group, not a connection. What a group is: [groups](../../data-model/groups/).
+When several records belong together as one named thing — the records of one deal, the attendees of one meeting. A group of two is a group, not a connection. What a group is: [groups](../data-model/groups.md).
 
 ## Usage
 ```text

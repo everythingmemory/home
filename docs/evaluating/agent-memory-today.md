@@ -1,12 +1,6 @@
----
-title: "Agent Memory Landscape"
-sidebar_position: 0
-sidebar_label: "Agent Memory Landscape"
-kind: explanation
-status: drafted
-verified_against: null
-lede: "Agents already remember things in several ways: the memory built into the model vendors' assistants, memory files, retrieval over a vector database, and dedicated memory layers. This page says what each keeps, where each stops, and how Everything Memory works."
----
+# Agent Memory Landscape
+
+Agents already remember things in several ways: the memory built into the model vendors' assistants, memory files, retrieval over a vector database, and dedicated memory layers. This page says what each keeps, where each stops, and how Everything Memory works.
 
 There are many ways for an agent to keep what it learns. Most people use the memory built into the assistant they already use. Developers add memory files, retrieval over a vector database, or a dedicated memory layer. For personal and team use these work well.
 
@@ -19,8 +13,8 @@ Everything Memory — eMemory for short — is one more way. It is built for reg
 | **Memory in the vendor's assistant** (Claude, ChatGPT, Gemini) | Notes the assistant saves about the user, and past chats it can refer to | The assistant decides what to recall in a conversation | What the assistant brings into its context window | The assistant updates its saved notes; the user can review and delete them | The vendor, in the user's account |
 | **Memory files** (`CLAUDE.md`, Claude Code auto memory, the Claude memory tool) | Text files the person or the model writes | Loaded at the start of a session, or opened by the model when it chooses | The size of what is loaded or opened; Claude Code loads the first 200 lines or 25KB of its auto memory | Files are edited in place; history exists if the files are kept under version control | Whoever stores the files |
 | **Retrieval over a vector database** | Chunks of documents with their vectors and whatever metadata is stored with them | Similarity search, often with metadata filters | The database | Whatever the builder implements: re-indexing, overwriting, or keeping versions | Whoever runs the database |
-| **Memory layers** (Mem0, Zep and Graphiti, Letta, LangMem) | Memories a language model extracts from conversations, or a graph of entities and facts, or memory blocks the agent edits | Search by meaning, by entity, by graph, or by the agent's own tools | The store behind them | Varies: overwriting with a history of changes (Mem0), facts with validity intervals that are invalidated, not deleted (Zep, Graphiti), consolidation by a language model (LangMem). See [how eMemory compares](../how-ememory-compares/). | A vendor's service, or infrastructure you run |
-| **Everything Memory** | Each source record exactly as it was written, with its lane, source type, authority, writing system and time | `e_gather` by meaning, by edge property, or by walking shared edge properties; `e_timeline` in time order | The database: PostgreSQL with pgvector, or Qdrant for vectors | An update keeps every earlier version in the record's ledger; a correction is pinned to the records it corrects; an adjustment links a later record; a deletion leaves a tombstone | You: your PostgreSQL, and with the [archive](../../durability/) on, your object storage |
+| **Memory layers** (Mem0, Zep and Graphiti, Letta, LangMem) | Memories a language model extracts from conversations, or a graph of entities and facts, or memory blocks the agent edits | Search by meaning, by entity, by graph, or by the agent's own tools | The store behind them | Varies: overwriting with a history of changes (Mem0), facts with validity intervals that are invalidated, not deleted (Zep, Graphiti), consolidation by a language model (LangMem). See [how eMemory compares](how-ememory-compares.md). | A vendor's service, or infrastructure you run |
+| **Everything Memory** | Each source record exactly as it was written, with its lane, source type, authority, writing system and time | `e_gather` by meaning, by edge property, or by walking shared edge properties; `e_timeline` in time order | The database: PostgreSQL with pgvector, or Qdrant for vectors | An update keeps every earlier version in the record's ledger; a correction is pinned to the records it corrects; an adjustment links a later record; a deletion leaves a tombstone | You: your PostgreSQL, and with the [archive](../durability/index.md) on, your object storage |
 
 ## Where the built-in approaches stop
 
@@ -38,7 +32,7 @@ It keeps what it was given. The engine does not call a language model to extract
 
 Lanes, agent profiles and a policy say which calls may read and write which records. Engines can be peered and then exchange records. eMemory runs on hardware you choose, reached by any agent over MCP or by any program over REST, with an embeddings endpoint you supply, which can be one you host. The shipped stack runs with no internet access: the WordNet corpus is in its image, and the default embedding model runs locally.
 
-[How eMemory compares](../how-ememory-compares/) sets it beside the products above. [What Everything Memory is](../../) and [The parts](../../architecture/microservice-architecture/) describe it.
+[How eMemory compares](how-ememory-compares.md) sets it beside the products above. [What Everything Memory is](../architecture/product-overview.md) and [The parts](../architecture/microservice-architecture.md) describe it.
 
 ## Sources
 

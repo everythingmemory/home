@@ -1,0 +1,27 @@
+# conf/keys.yaml — this engine's client keys and what each one may do.
+#
+# Copy to conf/keys.yaml, or let `./e.sh client-key create --label NAME` write
+# it: create prints the key ONCE and appends its entry here. The key itself is
+# never in this file — only its SHA-256. Local to this engine: never in a
+# policy, never synced, never committed (.gitignore). Read once at start, so an
+# edit takes effect when the engine restarts. Keep it writable by its owner
+# only (chmod 644): the engine warns at start when group or others can write it.
+#
+# An entry with no scope field opens every profile and every operation.
+# An entry with any scope field holds only what it names:
+#   profiles:    profile names — enforced by the profile's uuid
+#   policies:    policy names or uuids — every profile those policies declare
+#   operations:  policies, peers, bundles, admin, records — the profile-less
+#                operator work it may do
+# A name this engine does not know refuses the start, and so does an empty
+# list (leave the field out instead). Quote the hash: YAML reads an all-digit
+# one as a number.
+keys:
+  - label: console
+    hash: "0000000000000000000000000000000000000000000000000000000000000000"
+  - label: scout
+    hash: "1111111111111111111111111111111111111111111111111111111111111111"
+    profiles: [restricted]
+  - label: ops
+    hash: "2222222222222222222222222222222222222222222222222222222222222222"
+    operations: [policies, peers, admin]

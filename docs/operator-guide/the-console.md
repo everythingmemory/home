@@ -1,11 +1,6 @@
----
-title: "The Console"
-sidebar_position: 1.7
-kind: how-to
-status: drafted
-verified_against: "console 1.0.10"
-lede: "People who oversee an engine — operators, reviewers, auditors — need to see its memory directly, without an agent in between. The console is the engine's own web view: browse records with their full provenance and history, read the policies in force and every change to them, review what was deleted and when, check the engine's health, and manage its policies and peer pairings."
----
+# The Console
+
+People who oversee an engine — operators, reviewers, auditors — need to see its memory directly, without an agent in between. The console is the engine's own web view: browse records with their full provenance and history, read the policies in force and every change to them, review what was deleted and when, check the engine's health, and manage its policies and peer pairings.
 
 ## What it is
 
@@ -26,9 +21,9 @@ A policy's YAML can be downloaded from the control plane.
 
 ## Signing in
 
-Open the console in a browser on the machine the stack runs on; the [quickstart](../quickstart/) gives its address. With authentication on, sign in with a client key — the same kind of `emem_…` key an agent uses.
+Open the console in a browser on the machine the stack runs on; the [quickstart](quickstart.md) gives its address. With authentication on, sign in with a client key — the same kind of `emem_…` key an agent uses.
 
-- **Mint a key just for people,** rather than reusing an agent's. Removing its hash later ends the console's access without touching any agent, and the audit log shows the console's activity under that key.
+- **Create a key just for people,** rather than reusing an agent's: `./e.sh client-key create --label console`. Deleting its entry from `conf/keys.yaml` later ends the console's access without touching any agent, and the audit log shows the console's activity under that key's label.
 - **The key never stays in the browser.** The console's own server checks it with the engine once, then holds it; the browser keeps only a session cookie that scripts on the page cannot read.
 - The console reads through the `restricted` agent profile, which every engine carries and which may read every lane.
-- **A session lasts.** It ends after 30 days, or when you sign out — not when you step away. Set `CONSOLE_SESSION_MAX` (and, if you want one, an idle limit with `CONSOLE_SESSION_IDLE`) in `local.env` to change that; `0` means no limit. Restarting the console signs everyone out, because it never writes a key to disk.
+- **A session lasts.** It ends after 30 days, or when you sign out — not when you step away. Set `CONSOLE_SESSION_MAX` (and, if you want one, an idle limit with `CONSOLE_SESSION_IDLE`) in `.env` to change that; `0` means no limit. Restarting the console signs everyone out, because it never writes a key to disk.

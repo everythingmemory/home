@@ -1,13 +1,8 @@
----
-title: "Multi-Site Mesh"
-sidebar_position: 14
-kind: how-to
-status: drafted
-verified_against: null
-lede: "Run one stack per site, peer the sites, and decide per site what it shares. A stack passes on what it received to its own peers, under its own shares."
----
+# Multi-Site Mesh
 
-The deployment option: [a multi-site enterprise mesh](../../deployment-options/multi-site/). Pairing two stacks: [stacks in a mesh](../stacks-in-a-mesh/).
+Run one stack per site, peer the sites, and decide per site what it shares. A stack passes on what it received to its own peers, under its own shares.
+
+The deployment option: [a multi-site enterprise mesh](../deployment-options/multi-site.md). Pairing two stacks: [stacks in a mesh](stacks-in-a-mesh.md).
 
 ## Plan the shares
 
@@ -37,8 +32,8 @@ A record that arrives through a relay keeps its origin: the site that wrote it.
 
 ## Steps
 
-1. Stand up each site's stack as a [single stack](../single-stack/), with authentication on and the API service published to the sites it peers with.
-2. Pair each pair of sites in the plan, as in [stacks in a mesh](../stacks-in-a-mesh/) steps 1 to 3.
+1. Stand up each site's stack as a [single stack](single-stack.md), with authentication on and the API service published to the sites it peers with.
+2. Pair each pair of sites in the plan, as in [stacks in a mesh](stacks-in-a-mesh.md) steps 1 to 3.
 3. Set each site's shares and accepts from the plan.
 4. With `CRON_ENABLED=true`, exchanges run every five minutes; `./e.sh peer sync` runs one now.
 5. Check on each site with `./e.sh peer list` (last exchange, shares, accepts) and `./e.sh peer status`.

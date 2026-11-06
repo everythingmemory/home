@@ -1,11 +1,6 @@
----
-title: "Microservice Architecture"
-sidebar_position: 4
-kind: reference
-status: drafted
-verified_against: null
-lede: "The services the compose file starts, how they connect, what each holds or does, and the interfaces the engine offers."
----
+# Microservice Architecture
+
+The services the compose file starts, how they connect, what each holds or does, and the interfaces the engine offers.
 
 The stack is one Docker Compose file, run on your hardware with no internet access needed. Two services are published, to the machine the stack runs on and to it alone: the API service and the console. Every other service is reached only by the others, by name, on the stack's own network.
 
@@ -95,14 +90,14 @@ The default route needs no key and sends nothing off the machine. The gateway ca
 
 | Service | Container | What it is | Holds or does |
 |---|---|---|---|
-| Archive Store | `archive-store`, `archive-bucket` | SeaweedFS | The [archive](../../durability/): S3-compatible object storage on local disk, in the host folder `ARCHIVE_DIR` |
+| Archive Store | `archive-store`, `archive-bucket` | SeaweedFS | The [archive](../durability/index.md): S3-compatible object storage on local disk, in the host folder `ARCHIVE_DIR` |
 
 ### Interfaces
 
 | Service | Container | What it is | Holds or does |
 |---|---|---|---|
 | Console | `console` | Web interface and its backend, one Node process | Holds the engine client key server-side in the sign-in session and passes `/api` to the API service. Published to this machine only |
-| Folder Intake | `folder-intake` | Its own compose file (`docker-compose.folder.yml`) | Watches a folder on this machine, mounted read-only, and writes its files to the API service. See [documents and files](../../use-cases/beyond-the-context-window/#documents-and-files) |
+| Folder Intake | `folder-intake` | Its own compose file (`docker-compose.folder.yml`) | Watches a folder on this machine, mounted read-only, and writes its files to the API service. See [documents and files](../use-cases/beyond-the-context-window.md#documents-and-files) |
 
 ## Overlays
 
@@ -122,6 +117,6 @@ The default route needs no key and sends nothing off the machine. The gateway ca
 | `/api/v1/sync/` | The exchange between peers |
 | `/health` | The engine's health: `healthy`, or `degraded` when the database is unreachable, or when the embedding width is not declared, cannot be read, or differs from the width of a vector the endpoint returned. The pipeline profile and the temporal profile in force are named in the reply. |
 
-`e.sh` is a command-line script over the REST API, for agent profiles, lanes, policies, records, edge properties, peers, ingesting files, bundle export and import, and minting client keys.
+`e.sh` is a command-line script over the REST API, for agent profiles, lanes, policies, records, edge properties, peers, ingesting files, bundle export and import, and creating client keys (`client-key create`) and first setup (`init`), which run on the machine without calling the engine.
 
-See [configuration](../../configuration/) for every setting.
+See [configuration](../configuration/index.md) for every setting.

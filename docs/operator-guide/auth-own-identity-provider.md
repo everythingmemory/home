@@ -1,11 +1,6 @@
----
-title: "Authentication with Your Own Identity Provider"
-sidebar_position: 8
-kind: how-to
-status: drafted
-verified_against: null
-lede: "Configure a self-hosted engine as an OAuth 2.1 resource server for your own identity provider, so people sign in from ChatGPT, claude.ai and other MCP clients."
----
+# Authentication with Your Own Identity Provider
+
+Configure a self-hosted engine as an OAuth 2.1 resource server for your own identity provider, so people sign in from ChatGPT, claude.ai and other MCP clients.
 
 :::warning[Not yet tested with third-party identity providers]
 This page describes what the engine's code does. It has been run only against eMemory SaaS's own identity provider.

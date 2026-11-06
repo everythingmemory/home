@@ -1,13 +1,8 @@
----
-title: "Adjustments"
-sidebar_position: 3.2
-kind: concept
-status: drafted
-verified_against: "core 1.2.8"
-lede: "Agents tracking facts that change — a price renegotiated, a date moved — need the earlier value kept as true for its time, not overwritten, and the later one linked to it. An adjustment writes the new fact as its own record and links it to the one it evolves; both keep their own time, source and authority; successive adjustments form a chain that every read shows, search results flag and traverse walks; and each link written or removed is audited."
----
+# Adjustments
 
-Challenges addressed: [Tracking Changes Through Time](../../use-cases/data-evolution/), [Point-in-Time Recall](../../use-cases/what-was-true-when/).
+Agents tracking facts that change — a price renegotiated, a date moved — need the earlier value kept as true for its time, not overwritten, and the later one linked to it. An adjustment writes the new fact as its own record and links it to the one it evolves; both keep their own time, source and authority; successive adjustments form a chain that every read shows, search results flag and traverse walks; and each link written or removed is audited.
+
+Challenges addressed: [Tracking Changes Through Time](../use-cases/data-evolution.md), [Point-in-Time Recall](../use-cases/what-was-true-when.md).
 
 ## Concepts
 
@@ -18,8 +13,8 @@ Facts change in three ways, and eMemory records each differently:
 | What happened | How it is recorded |
 |---|---|
 | A fact was right, and has since changed — a price renegotiated, a date moved | **an adjustment**: a new record, linked to the earlier one |
-| The record is a document or plan that moved on, and one record should hold its current state | **an [update](../source-records/#updating-a-record)**: the next version of the same record |
-| The record was never true | **a [correction](../../agents-how-to/correcting-a-record/)**: attached to it, stating the truth |
+| The record is a document or plan that moved on, and one record should hold its current state | **an [update](source-records.md#updating-a-record)**: the next version of the same record |
+| The record was never true | **a [correction](../agents-how-to/correcting-a-record.md)**: attached to it, stating the truth |
 
 An adjustment keeps both facts as facts: what was true in March and what is true in June are separate records, each with its own time, source and authority.
 
@@ -34,8 +29,8 @@ Each adjusted record must be in a lane the agent profile can write; one that is 
 ## Implications
 **Reads show the chain.** `e_read` on either record lists the other under `adjustments`; `e_gather` and `e_timeline` flag both `has_adjustment`; `e_gather` `traverse` walks from one to the other. Which came first is read from their ingest times.
 
-**Each step is audited.** The link's writing and removal are events in the [audit log](../../durability/the-audit-log/).
+**Each step is audited.** The link's writing and removal are events in the [audit log](../durability/the-audit-log.md).
 
 ## Reference
 
-How-to: [evolving a fact](../../agents-how-to/evolving-a-fact/). Every argument: [`e_ingest`](../../reference/tools/e_ingest/), [`e_property`](../../reference/tools/e_property/).
+How-to: [evolving a fact](../agents-how-to/evolving-a-fact.md). Every argument: [`e_ingest`](../reference/tools/e_ingest.md), [`e_property`](../reference/tools/e_property.md).

@@ -1,14 +1,9 @@
----
-title: "Updating a Record"
-sidebar_position: 7
-kind: how-to
-status: drafted
-verified_against: null
-lede: "Write the next version of a record you keep — a plan, a status, a document — with e_update. The sr_id stays the same, and every earlier version is kept."
----
+# Updating a Record
+
+Write the next version of a record you keep — a plan, a status, a document — with e_update. The sr_id stays the same, and every earlier version is kept.
 
 ## When to Use
-When the record is an artifact that has moved on, and you want one record that always holds its current state. If the record was right and the world changed, [evolve the fact](../evolving-a-fact/) instead; if it was wrong, [correct it](../correcting-a-record/).
+When the record is an artifact that has moved on, and you want one record that always holds its current state. If the record was right and the world changed, [evolve the fact](evolving-a-fact.md) instead; if it was wrong, [correct it](correcting-a-record.md).
 
 ## Usage
 ```text
@@ -53,4 +48,4 @@ curl -s -X POST "$EMEMORY_URL/api/v2/update" \
 
 ## Across the mesh
 
-Versions travel to peers. When two engines write the same version at once, every engine settles on the same one: the entry from the engine whose identity sorts later, then the later event id. The other stays in the record's history. See [source records](../../data-model/source-records/#a-record-is-a-ledger).
+Versions travel to peers. When two engines write the same version at once, every engine settles on the same one: the entry from the engine whose identity sorts later, then the later event id. The other stays in the record's history. See [source records](../data-model/source-records.md#a-record-is-a-ledger).

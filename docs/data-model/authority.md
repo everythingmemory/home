@@ -1,13 +1,8 @@
----
-title: "Authority"
-sidebar_position: 4
-kind: concept
-status: drafted
-verified_against: null
-lede: "When records disagree — a remark on a call against a signed contract — agents and auditors need to know which carries more weight, and on what basis, instead of picking the newer or better-worded one. Authority stamps every record with a level set by its source type, never raised by the agent that writes it; returns the level on every `e_read`; tells every connecting agent the order of the levels, so it weighs conflicts by a stated rule; and records the level in the audit log."
----
+# Authority
 
-Challenges addressed: [Auditable Decision-Making](../../use-cases/auditing-agentic-decisions/), [Tracking Changes Through Time](../../use-cases/data-evolution/).
+When records disagree — a remark on a call against a signed contract — agents and auditors need to know which carries more weight, and on what basis, instead of picking the newer or better-worded one. Authority stamps every record with a level set by its source type, never raised by the agent that writes it; returns the level on every `e_read`; tells every connecting agent the order of the levels, so it weighs conflicts by a stated rule; and records the level in the audit log.
+
+Challenges addressed: [Auditable Decision-Making](../use-cases/auditing-agentic-decisions.md), [Tracking Changes Through Time](../use-cases/data-evolution.md).
 
 ## Concepts
 
@@ -37,7 +32,7 @@ Every record carries an **authority**. The levels are ordered. The order is a co
 | To an open lane, as `documentary` | `documentary` |
 | To a closed lane, as one of its source types | The `authority` the policy declares for that type, or `conversational` if it declares none |
 
-A [correction](../../agents-how-to/correcting-a-record/) is separate. It carries `human_correction` unless the call says otherwise.
+A [correction](../agents-how-to/correcting-a-record.md) is separate. It carries `human_correction` unless the call says otherwise.
 
 :::warning
 `e_correct` accepts an `authority` argument and records the value it is given. The engine does not check that value against the levels above.
@@ -96,12 +91,12 @@ e_read {"sr_ids": ["sr_3f9a1c20e47b5d16a2c8e09f4b1d7e63", "sr_7b22e4d1a90c3f5812
 ## Implications
 **The source type decides.** An agent that wants a record to carry `documentary` must write it as a documentary record. It cannot write a conversational record and raise its level.
 
-**An operator sets the levels for a closed lane.** The policy declares each source type and its authority. See [lanes, agent profiles and policies](../../governance/lanes/).
+**An operator sets the levels for a closed lane.** The policy declares each source type and its authority. See [lanes, agent profiles and policies](../governance/lanes.md).
 
 **A correction does not depend on the level of the record it corrects.** It is attached to the record and returned with it, whatever authority the record carries.
 
-**The level is on the audit trail.** The event written when a record is ingested includes its authority. See [the audit log](../../durability/the-audit-log/).
+**The level is on the audit trail.** The event written when a record is ingested includes its authority. See [the audit log](../durability/the-audit-log.md).
 
 ## Reference
 
-Where authority is returned: [`e_read`](../../reference/tools/e_read/). Where a correction's authority is set: [`e_correct`](../../reference/tools/e_correct/).
+Where authority is returned: [`e_read`](../reference/tools/e_read.md). Where a correction's authority is set: [`e_correct`](../reference/tools/e_correct.md).

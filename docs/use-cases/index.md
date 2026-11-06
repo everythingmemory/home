@@ -1,12 +1,12 @@
----
-title: "Agent Memory Challenges"
-sidebar_position: 0
-kind: reference
-status: drafted
-verified_against: null
-lede: "The memory problems agents run into once they do real work: what each problem is, how Everything Memory addresses it, and an example."
----
+# Agent Memory Challenges
 
-import DocCardList from '@theme/DocCardList';
+The memory problems agents run into once they do real work: what each problem is, how Everything Memory addresses it, and an example.
 
-<DocCardList />
+- [Auditable Decision-Making](auditing-agentic-decisions.md)
+- [Context Window Limits and Lossy Compaction](beyond-the-context-window.md)
+- [Tracking Changes Through Time](data-evolution.md)
+- [Point-in-Time Recall](what-was-true-when.md)
+- [Vendor-Independent Memory](vendor-independent-memory.md)
+- [Enterprise Distributed Memory Requirements](enterprise-memory-mesh.md)
+- [Multi-Agent Coordination](agent-swarm-coordination.md)
+- [Multi-Agent Isolation](multi-agent-isolation.md)

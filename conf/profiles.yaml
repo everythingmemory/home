@@ -17,6 +17,11 @@
 # — the pipeline is a menu — and `conf/profiles.tuning.yaml` holds each of these
 # profiles with the row-side names substituted back, as the control arm.
 #
+# ONLY VETTED PROFILES SHIP: this file is `default`, `retrieval_v1`,
+# `gather`, `temporal` and `timeline_v1`. The measurement profiles
+# (agentic_eval_v1/_v2 and the control arms) are in conf/profiles.tuning.yaml,
+# which stays in core and is in no release.
+#
 # Test-only profiles injected via tests/conftest.py.
 
 # --- Sentinel ---
@@ -27,80 +32,11 @@ default:
   ingestion:
     components: [not-configured]
 
-# --- Production curate profile ---
-
-agentic_eval_v1:
-  curate:
-    components: [tokenize_query, tag_property_retrieve, tsquery_retrieve, semantic,
-                 window_semantic, window_expand, true_distance_balanced_dedup,
-                 slice_page, load_srs, format_output]
-  ingestion:
-    components: [validate, persist, agent_properties, plugin_wordnet, plugin_duckling, plugin_json_leaf, embed, archive]
-    # source_type allowlist — agents must use one of these unless the
-    # profile sets allow_any_source_type: true. Customers extend by adding
-    # their own vocabulary (CRM, Slack, SAP, etc.).
-    # allowed_source_types: [conversational, documentary]
-    allow_any_source_type: true
-  tag_property_retrieve:
-    max_candidates: 200
-  semantic:
-    max_srs: 200
-  window_semantic:
-    max_srs: 400
-  tsquery_retrieve:
-    max_candidates: 20
-  true_distance_balanced_dedup:
-    semantic: 40
-    property: 35
-    window: 20
-    tsquery: 5
-  slice_page:
-    page_size: 30
-  format_output:
-    attribution_detail: 5
-
-# --- agentic_eval_v2 — v1 without `plugin_json_leaf` ---
+# --- retrieval_v1 — the shipped curate profile, with time read by chrono ---
 #
-# Measured 2026-10-09 on the fleet's only JSON records: no element `json_leaf`
-# put in `tag_cache` is one a question can produce (the question side is WordNet
-# alone, letters of three or more), and the single-word leaves WordNet had
-# already extracted. Its value was the catalog, which gave to
-# declared rows. On deep JSON (NVD: 100+ leaves a record) it mints elements
-# nothing reads. Everything else is v1, verbatim; v1 stays on the menu.
-agentic_eval_v2:
-  curate:
-    components: [tokenize_query, tag_property_retrieve, tsquery_retrieve, semantic,
-                 window_semantic, window_expand, true_distance_balanced_dedup,
-                 slice_page, load_srs, format_output]
-  ingestion:
-    components: [validate, persist, agent_properties, plugin_wordnet, plugin_duckling, embed, archive]
-    # source_type allowlist — agents must use one of these unless the
-    # profile sets allow_any_source_type: true. Customers extend by adding
-    # their own vocabulary (CRM, Slack, SAP, etc.).
-    # allowed_source_types: [conversational, documentary]
-    allow_any_source_type: true
-  tag_property_retrieve:
-    max_candidates: 200
-  semantic:
-    max_srs: 200
-  window_semantic:
-    max_srs: 400
-  tsquery_retrieve:
-    max_candidates: 20
-  true_distance_balanced_dedup:
-    semantic: 40
-    property: 35
-    window: 20
-    tsquery: 5
-  slice_page:
-    page_size: 30
-  format_output:
-    attribution_detail: 5
-
-# --- retrieval_v1 — the shipped profile: agentic_eval_v2 with time read by chrono ---
-#
-# `agentic_eval_v2` verbatim except `plugin_chrono` in `plugin_duckling`'s place
-# on the ingest list (pinned by tests/unit/pipeline/test_profile_retrieval_v1.py). A
+# The measured `agentic_eval_v2` (conf/profiles.tuning.yaml) verbatim except
+# `plugin_chrono` in `plugin_duckling`'s place on the ingest list (pinned by
+# tests/unit/pipeline/test_profile_retrieval_v1.py). A
 # stack selects it with PIPELINE_PROFILE — the profile is what decides which
 # extract plugins run — and TEMPORAL_PROFILE=timeline_v1 for the question
 # side. Needs the `chrono` entry in the plugins.yaml the stack runs. Selecting it

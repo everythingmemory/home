@@ -34,7 +34,7 @@
 
 plugins:
 
-  # NOT IN THE SHIPPED COMPOSE; named only by agentic_eval_v1.
+  # NOT IN THE SHIPPED COMPOSE; named by no shipped profile.
   json_leaf:
     type: extract
     url: http://plugin-json-leaf:8000/invoke
@@ -72,8 +72,8 @@ plugins:
     retries: 1
     optional: true
 
-  # NOT IN THE SHIPPED COMPOSE; named by agentic_eval_v1/_v2 at
-  # ingest and by the `temporal` profile's question parse.
+  # NOT IN THE SHIPPED COMPOSE; named by the `temporal`
+  # profile's question parse.
   duckling:
     type: extract
     url: http://plugin-duckling:8000/invoke

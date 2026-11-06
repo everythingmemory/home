@@ -9,7 +9,8 @@ CI runs this same file, from .release/ in their root.
 Fails (exit 1) on:
   - a file the release manifest (.release/manifest.txt) does not list, a
     listed file that is missing, or one whose content changed;
-  - a section citation (§ and digits) or an internal document name;
+  - a section citation (§ and digits), a sprint tag (v and two digits) or an
+    internal document name;
   - a word on the term list (.release/terms.json holds SHA-256 digests only,
     so the list itself names no one);
   - a private registry or hostname;
@@ -29,6 +30,7 @@ HERE = ".release"
 
 RULES: list[tuple[str, re.Pattern]] = [
     ("citation", re.compile(r"§+\s?\d")),
+    ("sprint-tag", re.compile(r"\bv[3-5][0-9]\b")),
     ("internal-doc", re.compile(
         r"\b(?:arch|plan|backlog|runbook|review|handoff|spike)(?:[.-][\w-]+)*\.md\b"
         r"|\b[a-z]+\.spec\b(?![.\w])"

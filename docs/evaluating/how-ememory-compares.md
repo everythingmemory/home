@@ -1,11 +1,6 @@
----
-title: "Comparison"
-sidebar_position: 1
-kind: explanation
-status: drafted
-verified_against: null
-lede: "Everything Memory beside the memory built into the vendors' assistants and the memory layers most named in 2026: Mem0, Zep and Graphiti, Letta and LangMem. What each keeps, how each handles change, where each runs, what eMemory offers that differs, and where the others do more."
----
+# Comparison
+
+Everything Memory beside the memory built into the vendors' assistants and the memory layers most named in 2026: Mem0, Zep and Graphiti, Letta and LangMem. What each keeps, how each handles change, where each runs, what eMemory offers that differs, and where the others do more.
 
 This page states what each product does, from its own documentation, and how eMemory differs.
 
@@ -24,17 +19,17 @@ This page states what each product does, from its own documentation, and how eMe
 
 **Records are kept as written.** The engine does not call a language model to extract, summarize, merge or consolidate records. Content written twice is two records. An update replaces a record's current content and keeps each earlier version, in full, in the record's ledger. A deletion takes the record out of retrieval and leaves a tombstone; the ledger and the audit events stay, and with the archive on, the record's objects stay in object storage.
 
-Some things are removed. A deletion takes the record out of retrieval on this engine — its edge properties and vectors go with it — while every version stays in its history, and an undelete brings it back. A deletion is local and never sent to peers. An operator can purge a policy, which deletes its events. See [deleting a record](../../agents-how-to/deleting-a-record/).
+Some things are removed. A deletion takes the record out of retrieval on this engine — its edge properties and vectors go with it — while every version stays in its history, and an undelete brings it back. A deletion is local and never sent to peers. An operator can purge a policy, which deletes its events. See [deleting a record](../agents-how-to/deleting-a-record.md).
 
 Of the others, Mem0 and LangMem store what a model extracts unless told otherwise; Zep keeps the source episode beside the facts it extracts; Letta keeps every message.
 
-**A correction states the truth without altering the record.** It is a separate object pinned to the one record it corrects, and `e_read` returns the record with it. A correction does not change: to change one, retract it and write another. See [corrections](../../agents-how-to/correcting-a-record/). Mem0 and LangMem change or remove the memory itself; Zep invalidates a contradicted fact and keeps it, with its time bounds.
+**A correction states the truth without altering the record.** It is a separate object pinned to the one record it corrects, and `e_read` returns the record with it. A correction does not change: to change one, retract it and write another. See [corrections](../agents-how-to/correcting-a-record.md). Mem0 and LangMem change or remove the memory itself; Zep invalidates a contradicted fact and keeps it, with its time bounds.
 
-**Changes are audited.** Each change a tool makes writes an event in the same transaction, naming the record, lane, agent profile and engine; `e_audit` reads them, including the content before and after an update. Every record carries the system that wrote it and its authority level. Mem0 has a history of each memory's changes, and its self-hosted server keeps a request audit log. See [the audit log](../../durability/the-audit-log/).
+**Changes are audited.** Each change a tool makes writes an event in the same transaction, naming the record, lane, agent profile and engine; `e_audit` reads them, including the content before and after an update. Every record carries the system that wrote it and its authority level. Mem0 has a history of each memory's changes, and its self-hosted server keeps a request audit log. See [the audit log](../durability/the-audit-log.md).
 
-**Engines exchange as peers.** Two peered engines exchange records (each version, with its edge properties), corrections, policies and audit events, as streams of events, each item applied once by its identity. From the same entries every engine derives the same current state, the latest by version with a fixed tie-break, so edits made on two engines at once settle on the same answer everywhere; the other version stays in the record's history. What crosses is chosen per peer: one side shares a policy, the other accepts it. Records, edge properties, corrections, tombstones and audit events take ids with 128 random bits; the events of updates, corrections and policies take ids with 122. The documentation checked for the other products does not describe exchange between independently run instances; Letta's Agent File moves an agent from one server to another as a file. See [the exchange](../../architecture/distributed-mesh-architecture/).
+**Engines exchange as peers.** Two peered engines exchange records (each version, with its edge properties), corrections, policies and audit events, as streams of events, each item applied once by its identity. From the same entries every engine derives the same current state, the latest by version with a fixed tie-break, so edits made on two engines at once settle on the same answer everywhere; the other version stays in the record's history. What crosses is chosen per peer: one side shares a policy, the other accepts it. Records, edge properties, corrections, tombstones and audit events take ids with 128 random bits; the events of updates, corrections and policies take ids with 122. The documentation checked for the other products does not describe exchange between independently run instances; Letta's Agent File moves an agent from one server to another as a file. See [the exchange](../architecture/distributed-mesh-architecture.md).
 
-**The data is yours, and the model is your choice.** Records live in your PostgreSQL and, with the [archive](../../durability/) on, in your S3-compatible object storage. Any agent reaches the engine over MCP, and any program over REST. You choose the embeddings endpoint. eMemory does not ship an export bundle. Claude imports memory from another assistant as text that the other assistant writes out and you paste in; Gemini accepts that text and also imports another assistant's exported chat history. Claude can write out its memories for you to copy, and includes memory in its data export. Mem0's platform exports memories to a schema you define, and Letta saves an agent, with its memory blocks and messages but not its archival memory, to an Agent File that any Letta server imports.
+**The data is yours, and the model is your choice.** Records live in your PostgreSQL and, with the [archive](../durability/index.md) on, in your S3-compatible object storage. Any agent reaches the engine over MCP, and any program over REST. You choose the embeddings endpoint. eMemory does not ship an export bundle. Claude imports memory from another assistant as text that the other assistant writes out and you paste in; Gemini accepts that text and also imports another assistant's exported chat history. Claude can write out its memories for you to copy, and includes memory in its data export. Mem0's platform exports memories to a schema you define, and Letta saves an agent, with its memory blocks and messages but not its archival memory, to an Agent File that any Letta server imports.
 
 **It runs where you put it.** eMemory is a set of containers you run with Docker Compose. It needs an embeddings endpoint it can reach, which can be one you host. The shipped stack runs with no internet access: the WordNet corpus is in its image, and the default embedding model runs locally. Mem0, Graphiti, Letta and LangMem can also be run on your own infrastructure, and Zep offers deployment in your own cloud.
 
@@ -46,7 +41,7 @@ Of the others, Mem0 and LangMem store what a model extracts unless told otherwis
 - **An agent runtime.** Letta runs the agent, with its memory in its context. eMemory runs no agent.
 - **Managed service.** Mem0, Zep and Letta offer hosted services.
 
-See [What Everything Memory is](../../).
+See [What Everything Memory is](../architecture/product-overview.md).
 
 ## Sources
 

@@ -1,13 +1,8 @@
----
-title: "Flexible Embedding Spaces"
-sidebar_position: 3
-kind: concept
-status: drafted
-verified_against: null
-lede: "Organisations need to choose two things for search by meaning — the embedding model, local and keeping text at home or hosted, and the store its vectors live in — and to change either later without vectors from different models ever being mixed. Embedding spaces keep each model's vectors apart, one space per model, task prefixes and width; changing the model starts a new space that the engine fills in the background while the old one stays, so switching back is immediate; the vectors live in PostgreSQL or in Qdrant, chosen per stack, and after a switch the engine refills the new store; and a peer's vectors are used only where the spaces match."
----
+# Flexible Embedding Spaces
 
-Challenges addressed: [Context Window Limits and Lossy Compaction](../../use-cases/beyond-the-context-window/), [Vendor-Independent Memory](../../use-cases/vendor-independent-memory/).
+Organisations need to choose two things for search by meaning — the embedding model, local and keeping text at home or hosted, and the store its vectors live in — and to change either later without vectors from different models ever being mixed. Embedding spaces keep each model's vectors apart, one space per model, task prefixes and width; changing the model starts a new space that the engine fills in the background while the old one stays, so switching back is immediate; the vectors live in PostgreSQL or in Qdrant, chosen per stack, and after a switch the engine refills the new store; and a peer's vectors are used only where the spaces match.
+
+Challenges addressed: [Context Window Limits and Lossy Compaction](../use-cases/beyond-the-context-window.md), [Vendor-Independent Memory](../use-cases/vendor-independent-memory.md).
 
 ## Concepts
 
@@ -17,7 +12,7 @@ A vector from one embedding model cannot be compared with a vector from another.
 
 So the engine keeps one space per route. A space's identity is the route's model, its task prefixes, and its vector width. Each space has its own table, created the first time a vector is written to it.
 
-The engine embeds through the stack's [model gateway](../../architecture/microservice-architecture/#models), an OpenAI-compatible endpoint. `EMBEDDING_BASE_URL` names the endpoint, including `/v1`, and `EMBEDDING_MODEL` names the route. Both are required: the engine and its workers refuse to start without them.
+The engine embeds through the stack's [model gateway](microservice-architecture.md#models), an OpenAI-compatible endpoint. `EMBEDDING_BASE_URL` names the endpoint, including `/v1`, and `EMBEDDING_MODEL` names the route. Both are required: the engine and its workers refuse to start without them.
 
 | Route (`EMBEDDING_MODEL`) | Served by | Width | Task prefixes |
 |---|---|---|---|
@@ -64,7 +59,7 @@ flowchart LR
   r5["record n"] --> w
 ```
 
-When question search matches a window vector, it returns the records the window was made from. See [finding records](../../agents-how-to/finding-records/).
+When question search matches a window vector, it returns the records the window was made from. See [finding records](../agents-how-to/finding-records.md).
 
 ## Example
 Acme's stack runs as shipped, on the local route.
@@ -86,12 +81,12 @@ The first vector written creates a second space, 1536 wide, with no prefixes. Fo
 ## Implications
 **A model you serve yourself is a space like any other.** Where the model runs is no part of a space's identity.
 
-**A tombstone reaches every space.** Deleting a record deletes its own vectors in all of them. A window vector it contributed to remains until that window is recomputed. See [tombstones](../../agents-how-to/deleting-a-record/).
+**A tombstone reaches every space.** Deleting a record deletes its own vectors in all of them. A window vector it contributed to remains until that window is recomputed. See [tombstones](../agents-how-to/deleting-a-record.md).
 
-**Vectors cross to a peer only into a matching space.** A peer with no space for that model and width skips the vector and embeds the record itself. See [the exchange](../../architecture/distributed-mesh-architecture/).
+**Vectors cross to a peer only into a matching space.** A peer with no space for that model and width skips the vector and embeds the record itself. See [the exchange](distributed-mesh-architecture.md).
 
-**The archive keeps vectors per space.** A rebuilt engine reads back the active space's vectors only. See [the archive](../../durability/archive-and-restore/).
+**The archive keeps vectors per space.** A rebuilt engine reads back the active space's vectors only. See [the archive](../durability/archive-and-restore.md).
 
 ## Reference
 
-Every setting and its default: [embeddings configuration](../../configuration/embeddings/).
+Every setting and its default: [embeddings configuration](../configuration/embeddings.md).

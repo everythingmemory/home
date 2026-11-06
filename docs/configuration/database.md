@@ -1,11 +1,6 @@
----
-title: "Database"
-sidebar_position: 1
-kind: reference
-status: drafted
-verified_against: null
-lede: "The database's name, user and password, and how the engine reaches it."
----
+# Database
+
+The database's name, user and password, and how the engine reaches it.
 
 | Setting | Engine default | Shipped | What it does |
 |---|---|---|---|

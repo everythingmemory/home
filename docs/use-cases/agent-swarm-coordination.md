@@ -1,20 +1,15 @@
----
-title: "Multi-Agent Coordination"
-sidebar_position: 7
-kind: concept
-status: drafted
-verified_against: null
-lede: "A team of agents needs a shared picture of the work without agents overwriting each other's data, without a message bus between them, and with a way to trace afterwards which agent wrote what, and from which records. Everything Memory gives each role its own lane through a policy and agent profiles; lets an agent read others' lanes and write derivative records in its own, linked by shared edge properties; keeps every earlier version; and records the source, authority and agent profile of every write."
----
+# Multi-Agent Coordination
+
+A team of agents needs a shared picture of the work without agents overwriting each other's data, without a message bus between them, and with a way to trace afterwards which agent wrote what, and from which records. Everything Memory gives each role its own lane through a policy and agent profiles; lets an agent read others' lanes and write derivative records in its own, linked by shared edge properties; keeps every earlier version; and records the source, authority and agent profile of every write.
 
 ## Approach
-- **The work is partitioned.** A [policy](../../governance/policies/) declares a [lane](../../governance/lanes/) per role and an [agent profile](../../governance/agent-profiles/) per agent: a home lane to write in, and other lanes it may read. The lane's [source types](../../governance/source-types/) constrain what each role writes.
-- **Agents build on each other's work.** An agent reads another's lane and writes its own derivative records in its own lane, linked to the originals through shared [edge properties](../../data-model/edge-properties/) such as `org:Acme`. The originals are never touched.
-- **Relations are asserted.** [Adjustments](../../agents-how-to/evolving-a-fact/) chain a newer record to the one it evolves; [connections](../../data-model/connections/) and [groups](../../data-model/groups/) assert named relations. Each needs write access to the lanes of the records it links.
+- **The work is partitioned.** A [policy](../governance/policies.md) declares a [lane](../governance/lanes.md) per role and an [agent profile](../governance/agent-profiles.md) per agent: a home lane to write in, and other lanes it may read. The lane's [source types](../governance/source-types.md) constrain what each role writes.
+- **Agents build on each other's work.** An agent reads another's lane and writes its own derivative records in its own lane, linked to the originals through shared [edge properties](../data-model/edge-properties.md) such as `org:Acme`. The originals are never touched.
+- **Relations are asserted.** [Adjustments](../agents-how-to/evolving-a-fact.md) chain a newer record to the one it evolves; [connections](../data-model/connections.md) and [groups](../data-model/groups.md) assert named relations. Each needs write access to the lanes of the records it links.
 - **Changes are kept over time.** Updates keep every earlier version; corrections and adjustments are dated in the audit log.
-- **It is auditable.** Every record carries its source system, source type and authority; every write names the agent profile and, with authentication on, the credential. See [auditing](../auditing-agentic-decisions/).
+- **It is auditable.** Every record carries its source system, source type and authority; every write names the agent profile and, with authentication on, the credential. See [auditing](auditing-agentic-decisions.md).
 
-![Lanes crm, ops and people, each holding its own records, linked across lanes by shared edge properties such as org:Acme](/img/lanes.svg)
+![Lanes crm, ops and people, each holding its own records, linked across lanes by shared edge properties such as org:Acme](../../static/img/lanes.svg)
 
 No messaging, no agent blocking on another: the memory is the channel, the shared edge properties are the wiring.
 

@@ -1,13 +1,8 @@
----
-title: "Change Feed"
-sidebar_position: 1
-kind: concept
-status: drafted
-verified_against: null
-lede: "Programs that show or react to what agents do in memory — a dashboard, a reviewer's screen, another agent — need each change as it happens, without polling. The change feed streams each audit-log event this engine writes, as it commits, over server-sent events; sends only events in lanes the chosen agent profile reads; replays what a client missed when it reconnects with its last cursor; and leaves the audit log as the record, so nothing missed live is lost."
----
+# Change Feed
 
-Challenges addressed: [Auditable Decision-Making](../../use-cases/auditing-agentic-decisions/), [Multi-Agent Coordination](../../use-cases/agent-swarm-coordination/).
+Programs that show or react to what agents do in memory — a dashboard, a reviewer's screen, another agent — need each change as it happens, without polling. The change feed streams each audit-log event this engine writes, as it commits, over server-sent events; sends only events in lanes the chosen agent profile reads; replays what a client missed when it reconnects with its last cursor; and leaves the audit log as the record, so nothing missed live is lost.
+
+Challenges addressed: [Auditable Decision-Making](../use-cases/auditing-agentic-decisions.md), [Multi-Agent Coordination](../use-cases/agent-swarm-coordination.md).
 
 ## Concepts
 
@@ -67,4 +62,4 @@ Live messages are best-effort. If the engine cannot publish to Redis, the event 
 
 ## Reference
 
-The audit log's event types: [the audit log](../../durability/the-audit-log/).
+The audit log's event types: [the audit log](../durability/the-audit-log.md).

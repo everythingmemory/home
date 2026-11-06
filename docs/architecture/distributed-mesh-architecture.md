@@ -1,13 +1,8 @@
----
-title: "Distributed Mesh Architecture"
-sidebar_position: 5
-kind: concept
-status: drafted
-verified_against: null
-lede: "Organisations whose agents work across sites, regions or clouds need some of their memory in more than one place: shared between sites, gathered where it is overseen, and safe when one site is lost. The mesh connects independent engines so each site shares exactly the policies it chooses with exactly the peers it chooses; a central site can collect and audit what the others share; a shared record survives the loss of any one site; and every site keeps working when it is cut off, catching up when it reconnects."
----
+# Distributed Mesh Architecture
 
-Challenges addressed: [Enterprise Distributed Memory Requirements](../../use-cases/enterprise-memory-mesh/), [Vendor-Independent Memory](../../use-cases/vendor-independent-memory/).
+Organisations whose agents work across sites, regions or clouds need some of their memory in more than one place: shared between sites, gathered where it is overseen, and safe when one site is lost. The mesh connects independent engines so each site shares exactly the policies it chooses with exactly the peers it chooses; a central site can collect and audit what the others share; a shared record survives the loss of any one site; and every site keeps working when it is cut off, catching up when it reconnects.
+
+Challenges addressed: [Enterprise Distributed Memory Requirements](../use-cases/enterprise-memory-mesh.md), [Vendor-Independent Memory](../use-cases/vendor-independent-memory.md).
 
 ## Concepts
 
@@ -54,9 +49,9 @@ Each engine keeps its own read bookmark per stream per peer. Items move in pages
 |---|---|---|
 | `policy` | Policy events | `event_id` |
 | `sr_entry` | Each version of each record: its whole state — content, lane, the edge properties declared on it. Deletions and undeletes are not sent. Tags do not cross; each engine derives its own | `event_id` |
-| `correction` | Each version of a [correction](../../agents-how-to/correcting-a-record/) | `event_id` |
-| `embedding` | Vectors of the active [embedding space](../../architecture/embedding-spaces/), by the record's lane, like the entries | `sr_id`, collection, chunk |
-| `audit` | [Audit log](../../durability/the-audit-log/) events | origin and `log_id` |
+| `correction` | Each version of a [correction](../agents-how-to/correcting-a-record.md) | `event_id` |
+| `embedding` | Vectors of the active [embedding space](embedding-spaces.md), by the record's lane, like the entries | `sr_id`, collection, chunk |
+| `audit` | [Audit log](../durability/the-audit-log.md) events | origin and `log_id` |
 
 ## Example
 Sarah's engine has shared the `renewals` policy with John's, and John's has accepted it. Sarah's agent records the renewal date in a lane of that policy.
@@ -65,7 +60,7 @@ Sarah's engine has shared the `renewals` policy with John's, and John's has acce
 e_ingest {"content": "The Acme renewal is due 2026-12-31.", "properties": ["org:Acme", "topic:renewal"], "assign_lane": "renewals"}
 ```
 
-On the next exchange the record crosses, then its edge properties and vector. John's engine holds it under the same `sr_id`, with Sarah's engine as its origin, and derives the record's tags itself. Step by step: [stacks in a mesh](../../operator-guide/stacks-in-a-mesh/).
+On the next exchange the record crosses, then its edge properties and vector. John's engine holds it under the same `sr_id`, with Sarah's engine as its origin, and derives the record's tags itself. Step by step: [stacks in a mesh](../operator-guide/stacks-in-a-mesh.md).
 
 ## Implications
 **A peer key opens the exchange routes only.** It is accepted on `POST /api/v1/sync/pull` and `/api/v1/sync/push` and refused everywhere else; managing peers takes a client key. The engine that mints a key shows it once and keeps a SHA-256 hash; the engine that uses it stores the key itself.
@@ -80,4 +75,4 @@ On the next exchange the record crosses, then its edge properties and vector. Jo
 
 ## Setting it up
 
-Step by step: [stacks in a mesh](../../operator-guide/stacks-in-a-mesh/), [local stacks peered with eMemory SaaS](../../operator-guide/saas-peering/), [multi-site mesh](../../operator-guide/multi-site-mesh/).
+Step by step: [stacks in a mesh](../operator-guide/stacks-in-a-mesh.md), [local stacks peered with eMemory SaaS](../operator-guide/saas-peering.md), [multi-site mesh](../operator-guide/multi-site-mesh.md).

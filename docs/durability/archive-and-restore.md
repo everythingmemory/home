@@ -1,13 +1,8 @@
----
-title: "Archive and Restore"
-sidebar_position: 1
-kind: concept
-status: drafted
-verified_against: null
-lede: "Anyone running memory in production needs it to survive the loss of its database, and its history kept even after records are deleted. The archive writes every record version, correction, policy event, audit event and vector to S3-compatible storage — the bundled store or one of their own — with object bodies encrypted; an engine that loses its database starts on an empty one, rebuilds from the archive and reports when it has finished; and the engine never deletes an object from the archive."
----
+# Archive and Restore
 
-Challenges addressed: [Auditable Decision-Making](../../use-cases/auditing-agentic-decisions/), [Tracking Changes Through Time](../../use-cases/data-evolution/).
+Anyone running memory in production needs it to survive the loss of its database, and its history kept even after records are deleted. The archive writes every record version, correction, policy event, audit event and vector to S3-compatible storage — the bundled store or one of their own — with object bodies encrypted; an engine that loses its database starts on an empty one, rebuilds from the archive and reports when it has finished; and the engine never deletes an object from the archive.
+
+Challenges addressed: [Auditable Decision-Making](../use-cases/auditing-agentic-decisions.md), [Tracking Changes Through Time](../use-cases/data-evolution.md).
 
 ## Concepts
 
@@ -32,14 +27,14 @@ flowchart LR
 | Setting | What it does |
 |---|---|
 | `ARCHIVE_ENABLED` | `true` in the shipped stack |
-| `S3_ENDPOINT_URL`, `S3_BUCKET` | Where the archive lives |
-| `S3_ACCESS_KEY`, `S3_SECRET_KEY` | How the engine reaches it. Required |
+| `ARCHIVE_ENDPOINT_URL`, `ARCHIVE_BUCKET` | Where the archive lives |
+| `ARCHIVE_ACCESS_KEY`, `ARCHIVE_SECRET_KEY` | The login for the archive store. Required |
 | `ARCHIVE_DIR` | The absolute path of the host folder the bundled archive store writes to. Required; it must exist before the first start |
 | `REDIS_PASSWORD` | The job queue's password. Required |
 | `ARCHIVE_KEY` | The archive encryption key: the bodies of objects are encrypted with AES-256-GCM. Required. Object names, which include record ids, are not encrypted |
 | `CRON_ENABLED` | Runs the restore sweep, the backfill from database to archive, and the audit archive |
 
-The stack refuses to start without the S3 access key and secret and the archive encryption key.
+The stack refuses to start without the archive store's login and the archive encryption key. `./e.sh init` generates all three.
 
 ## What to back up
 
@@ -52,17 +47,17 @@ Two things, kept apart from each other:
 
 The database needs no backup of its own: it is rebuilt from the archive, with new encryption keys of its own.
 
-To keep a copy of a memory somewhere the engine cannot reach, or to move it to another engine, export a bundle: see [engine identity, bundles and take-over](../../governance/engine-identity-and-bundles/).
+To keep a copy of a memory somewhere the engine cannot reach, or to move it to another engine, export a bundle: see [engine identity, bundles and take-over](../governance/engine-identity-and-bundles.md).
 
 ## What the archive holds
 
 | Prefix | Contents |
 |---|---|
 | `srs/` | Each version of each record — its whole state: content, lane, the edge properties declared on it, and whether it is deleted — one object per version. A rebuilt engine derives tags and extracted edge properties again from the content |
-| `spaces/` | Each record's vectors, per [embedding space](../../architecture/embedding-spaces/) |
-| `cors/` | Each version of a [correction](../../agents-how-to/correcting-a-record/) |
+| `spaces/` | Each record's vectors, per [embedding space](../architecture/embedding-spaces.md) |
+| `cors/` | Each version of a [correction](../agents-how-to/correcting-a-record.md) |
 | `pol/` | Each policy event |
-| `audit/` | The [audit log](../../durability/the-audit-log/), one object per engine per hour |
+| `audit/` | The [audit log](the-audit-log.md), one object per engine per hour |
 | `engine/` | The engine's identity and its local settings |
 | `peers/` | The peer registry, without its keys |
 
@@ -71,10 +66,10 @@ Acme points its engine at its own S3-compatible store.
 
 ```bash
 ARCHIVE_ENABLED=true
-S3_ENDPOINT_URL=https://objects.acme.example
-S3_BUCKET=acme-memory
-S3_ACCESS_KEY=<access key>
-S3_SECRET_KEY=<secret key>
+ARCHIVE_ENDPOINT_URL=https://objects.acme.example
+ARCHIVE_BUCKET=acme-memory
+ARCHIVE_ACCESS_KEY=<access key>
+ARCHIVE_SECRET_KEY=<secret key>
 ARCHIVE_KEY=<openssl rand -base64 32>
 CRON_ENABLED=true
 ```
@@ -86,7 +81,7 @@ The database volume is lost. Acme starts the engine on an empty database with th
 3. Acme asks the engine whether it has finished.
 
 ```bash
-curl -H "Authorization: Bearer $API_KEY" https://memory.acme.example/api/v1/sync/status
+curl -H "Authorization: Bearer $EMEMORY_API_KEY" https://memory.acme.example/api/v1/sync/status
 ```
 
 ```json
@@ -112,4 +107,4 @@ curl -H "Authorization: Bearer $API_KEY" https://memory.acme.example/api/v1/sync
 
 ## Reference
 
-Every setting: [archive configuration](../../configuration/archive/).
+Every setting: [archive configuration](../configuration/archive.md).

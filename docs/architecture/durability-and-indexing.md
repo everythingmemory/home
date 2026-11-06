@@ -1,13 +1,8 @@
----
-title: "Durability and Indexing Strategy"
-sidebar_position: 1.5
-kind: concept
-status: drafted
-verified_against: "core 1.2.8"
-lede: "A system of record has to keep everything for good and still answer an agent in milliseconds — two jobs one store does badly. eMemory splits them: the archive holds the data itself, encrypted and never pruned on its own; Percona's PostgreSQL is the hybrid index over it — records, properties, tags and vectors, with full-text, graph and time lookups beside them; vectors can live in Qdrant instead; and the whole index is rebuildable from the archive, which is itself portable and secure."
----
+# Durability and Indexing Strategy
 
-Challenges addressed: [Context Window Limits and Lossy Compaction](../../use-cases/beyond-the-context-window/), [Auditable Decision-Making](../../use-cases/auditing-agentic-decisions/), [Tracking Changes Through Time](../../use-cases/data-evolution/).
+A system of record has to keep everything for good and still answer an agent in milliseconds — two jobs one store does badly. eMemory splits them: the archive holds the data itself, encrypted and never pruned on its own; Percona's PostgreSQL is the hybrid index over it — records, properties, tags and vectors, with full-text, graph and time lookups beside them; vectors can live in Qdrant instead; and the whole index is rebuildable from the archive, which is itself portable and secure.
+
+Challenges addressed: [Context Window Limits and Lossy Compaction](../use-cases/beyond-the-context-window.md), [Auditable Decision-Making](../use-cases/auditing-agentic-decisions.md), [Tracking Changes Through Time](../use-cases/data-evolution.md).
 
 ## Two layers
 
@@ -19,7 +14,7 @@ Challenges addressed: [Context Window Limits and Lossy Compaction](../../use-cas
 
 ## The archive is the data
 
-Everything the engine is told is written to the [archive](../../durability/archive-and-restore/) shortly after it changes, as objects encrypted with your `ARCHIVE_KEY`. Nothing in the engine deletes an archive object: a deleted record's history stays there too. The archive is what you back up, what a lost engine is rebuilt from, and what makes the index disposable.
+Everything the engine is told is written to the [archive](../durability/archive-and-restore.md) shortly after it changes, as objects encrypted with your `ARCHIVE_KEY`. Nothing in the engine deletes an archive object: a deleted record's history stays there too. The archive is what you back up, what a lost engine is rebuilt from, and what makes the index disposable.
 
 ## PostgreSQL is the hybrid index
 
@@ -27,20 +22,20 @@ Agent memory is usually assembled from several systems: a vector database for me
 
 | An agent asks for | The index answers with |
 |---|---|
-| records **like this** — by meaning | vectors in `pgvector`, with HNSW indexes, one table per [embedding space](../embedding-spaces/) — or in Qdrant |
+| records **like this** — by meaning | vectors in `pgvector`, with HNSW indexes, one table per [embedding space](embedding-spaces.md) — or in Qdrant |
 | records **with these words** | full-text search over the content, on a GIN index |
 | records **with this property** — exact, prefix or similar | the edge properties, on B-tree and trigram indexes |
-| records **connected to this one** | the [edge property hypergraph](../edge-property-graph/): joins on shared values, in SQL |
+| records **connected to this one** | the [edge property hypergraph](edge-property-graph.md): joins on shared values, in SQL |
 | records **about this time** | the time ranges the content mentions, as `tstzmultirange` values on a GiST index |
 | records **as they stood then** | each record's ledger of versions |
 
-[Hybrid retrieval](../how-search-ranks-results/) combines them into one ranked answer, under one set of access rules: the lanes an agent may read apply to every kind of retrieval alike.
+[Hybrid retrieval](how-search-ranks-results.md) combines them into one ranked answer, under one set of access rules: the lanes an agent may read apply to every kind of retrieval alike.
 
 ## Vectors: in PostgreSQL or in Qdrant
 
 Vectors live in PostgreSQL by default (`VECTOR_STORE=pgvector`). A stack can keep them in Qdrant instead (`VECTOR_STORE=qdrant`), a container of its own beside the database; everything else stays in PostgreSQL.
 
-Both are built to scale: in PostgreSQL, each collection has its own HNSW index once the space is fully embedded, so a search reads only the vectors it needs and stays fast as the memory grows, and most memories run well with everything in one database. Qdrant is there for scale, by separating responsibilities: similarity search is the heaviest lookup as a memory grows, and the vectors are its largest part. The database scales up, on one machine; Qdrant also scales out — its distributed mode spreads a collection across nodes — and can keep an index on fast disk rather than in memory (Qdrant's own features; the shipped overlay runs a single node). Moving the vectors there takes that load off the database, so each part grows on hardware sized for it. Switching does not move vectors: the new store starts empty and the engine's sweeps refill it, from the archive's vectors or by embedding the records again; switching back to PostgreSQL finds its old vectors in place. See [vector store settings](../../configuration/vector-store/).
+Both are built to scale: in PostgreSQL, each collection has its own HNSW index once the space is fully embedded, so a search reads only the vectors it needs and stays fast as the memory grows, and most memories run well with everything in one database. Qdrant is there for scale, by separating responsibilities: similarity search is the heaviest lookup as a memory grows, and the vectors are its largest part. The database scales up, on one machine; Qdrant also scales out — its distributed mode spreads a collection across nodes — and can keep an index on fast disk rather than in memory (Qdrant's own features; the shipped overlay runs a single node). Moving the vectors there takes that load off the database, so each part grows on hardware sized for it. Switching does not move vectors: the new store starts empty and the engine's sweeps refill it, from the archive's vectors or by embedding the records again; switching back to PostgreSQL finds its old vectors in place. See [vector store settings](../configuration/vector-store.md).
 
 ## Why this split
 

@@ -1,11 +1,6 @@
----
-title: "Using the Timeline"
-sidebar_position: 6
-kind: how-to
-status: drafted
-verified_against: null
-lede: "`e_timeline` returns records ordered by time, either by when they were written or by the dates their content names, and bounded by a window. This page says which time each option reads and how the bounds apply."
----
+# Using the Timeline
+
+`e_timeline` returns records ordered by time, either by when they were written or by the dates their content names, and bounded by a window. This page says which time each option reads and how the bounds apply.
 
 ## When to Use
 A question about a period needs records in order and inside a window. Every record has two kinds of time:
@@ -21,7 +16,7 @@ A question about a period needs records in order and inside a window. Every reco
 | `list` | Every record, inside the window |
 | `intersect` | Records that match every term in `match`, inside the window. A term matches an edge property whose label is the same and whose value contains the term's value, or a tag equal to it. A `label:value` term also matches a tag equal to its value alone, with no label |
 | `traverse` | Records within seven days either side of the time the record named in `sr_id` was written. Under a content-time order, those 14 days are matched against content time. When that record exists, `start_date` and `end_date` are ignored |
-| `find` | The records `e_gather` `find` would consider for `query` (see [finding records](../finding-records/)), put in time order |
+| `find` | The records `e_gather` `find` would consider for `query` (see [finding records](finding-records.md)), put in time order |
 | `changes` | What changed between `since` and `as_of` (default now): each record that is new, updated, deleted or undeleted in that span, newest first. It takes only `since`, `as_of`, `page` and `page_size`; pass back the `as_of` that page 1 returns for later pages |
 
 With `list`, `intersect` or `traverse` and no `start_date` or `end_date`, the engine reads dates out of `query`, relative to now. One date bounds the window to that date; two bound it between them. With more than two, or two in reverse order, the reply returns no records and its `hint` says why. The reply's `parsed_temporal` lists the dates it read.
@@ -57,4 +52,4 @@ curl -s -X POST "$EMEMORY_URL/api/v2/timeline" \
 
 ## Reference
 
-Every argument and refusal: [`e_timeline`](../../reference/tools/e_timeline/).
+Every argument and refusal: [`e_timeline`](../reference/tools/e_timeline.md).

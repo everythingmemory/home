@@ -1,13 +1,8 @@
----
-title: "Connections"
-sidebar_position: 3
-kind: concept
-status: drafted
-verified_against: "core 1.2.8"
-lede: "Agents that know how two records relate — this contract was signed by Sarah — need to state that relation outright, so later agents find it rather than guess it from labels the two happen to share. A connection writes a named relation between exactly two records, all or nothing; it reads the same from either side; it is matched like any edge property and followed ahead of widely shared ones when an agent walks the graph; and each one written or removed is audited."
----
+# Connections
 
-Challenges addressed: [Context Window Limits and Lossy Compaction](../../use-cases/beyond-the-context-window/), [Multi-Agent Coordination](../../use-cases/agent-swarm-coordination/).
+Agents that know how two records relate — this contract was signed by Sarah — need to state that relation outright, so later agents find it rather than guess it from labels the two happen to share. A connection writes a named relation between exactly two records, all or nothing; it reads the same from either side; it is matched like any edge property and followed ahead of widely shared ones when an agent walks the graph; and each one written or removed is audited.
+
+Challenges addressed: [Context Window Limits and Lossy Compaction](../use-cases/beyond-the-context-window.md), [Multi-Agent Coordination](../use-cases/agent-swarm-coordination.md).
 
 ## Concepts
 
@@ -17,7 +12,7 @@ Two records that carry the same edge property have something in common. That is 
 
 A connection is an assertion: someone declared that two records stand in a named relation. An edge property names what a record is about; a connection names how two records relate. The agent instructions the engine ships keep the two apart, because another record's name written on a record as an edge property reads exactly like that record's own identity.
 
-For a named membership of two or more records, see [groups](../groups/).
+For a named membership of two or more records, see [groups](groups.md).
 
 ## Writing and removing a connection
 
@@ -32,7 +27,7 @@ The connection is the shared value itself: one value, on both records, reading t
 
 The label `e_connect` is reserved: `connect` is the one way to write it and `disconnect` the one way to remove it. Both records must be in lanes the agent profile can write.
 
-**Removing.** `disconnect` is all-or-nothing, like `connect`: both records must exist, be writable, and carry the connection. If they share more than one connection, name the one to remove in `hint` — its value or the hint it was minted from; the reply to an unnamed call lists the shared connections to choose from. Removal writes a new version of each record, without the value, and keeps the earlier versions; the [audit log](../../durability/the-audit-log/) records a `property_removed` event for each.
+**Removing.** `disconnect` is all-or-nothing, like `connect`: both records must exist, be writable, and carry the connection. If they share more than one connection, name the one to remove in `hint` — its value or the hint it was minted from; the reply to an unnamed call lists the shared connections to choose from. Removal writes a new version of each record, without the value, and keeps the earlier versions; the [audit log](../durability/the-audit-log.md) records a `property_removed` event for each.
 
 ## Example
 Sarah's record and the signed Acme contract exist. The agent asserts the relation.
@@ -53,10 +48,10 @@ e_property {"action": "connect", "sr_id": ["sr_7b22e4d1a90c3f5812ab94c6e0d3f7a1"
 ## Implications
 **A connection is read like an edge property.** `e_read` lists it under the record's `properties`, and `e_property` and `e_gather` `intersect` match it like any other `label:value`.
 
-**Traverse walks it from either side.** `e_gather` `traverse` from one record returns the other, because they share the value. A connection is held by few records, so traverse follows it before widely shared edge properties. See [the edge property hypergraph](../../architecture/edge-property-graph/).
+**Traverse walks it from either side.** `e_gather` `traverse` from one record returns the other, because they share the value. A connection is held by few records, so traverse follows it before widely shared edge properties. See [the edge property hypergraph](../architecture/edge-property-graph.md).
 
 **Each write is audited.** Each record that receives the value writes a `property_added` event naming the connection.
 
 ## Reference
 
-How-to: [connecting records](../../agents-how-to/connecting-records/). Every argument: [`e_property`](../../reference/tools/e_property/).
+How-to: [connecting records](../agents-how-to/connecting-records.md). Every argument: [`e_property`](../reference/tools/e_property.md).

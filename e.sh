@@ -85,11 +85,20 @@
 #   peer    remove PEER_ID                unpair a peer
 #   peer    sync [PEER_ID]                on-demand push+pull (one peer, or all if omitted)
 #   peer    status                        this engine's sync status (cursors, peer count)
-#   client-key mint                       mint a client key (emem_...): prints it once, with its hash. Put the
-#                                         hash in API_KEY_HASH_LIST and give the key to one holder: an agent's
-#                                         harness, or the console (a dedicated key for people). One key per
-#                                         holder; revoke it by removing its hash. Runs here: no --url, no
+#   client-key create --label L [--profiles a,b] [--policies p,q] [--operations x,y] [--file PATH]
+#                                         create a client key (emem_...): prints it ONCE, and appends its entry
+#                                         (label, hash, scope) to conf/keys.yaml (--file names another). Give
+#                                         the key to one holder: an agent's harness, or the console (a dedicated
+#                                         key for people). One key per holder; revoke it by deleting its entry.
+#                                         No scope flag = every profile and every operation; with any, only what
+#                                         they name. OPERATIONS: policies, peers, bundles, admin, records. The
+#                                         engine checks the names when it restarts. Runs here: no --url, no
 #                                         engine call
+#   init [--archive-dir PATH]             first setup, on this machine: write .env from .env.example with
+#                                         fresh passwords and archive keys, make the archive folder
+#                                         (default $HOME/ememory-data/archive) and name it as ARCHIVE_DIR,
+#                                         and start conf/keys.yaml. Refuses when .env exists. Prints no
+#                                         secret but ARCHIVE_KEY, once. Runs here: no --url, no engine call
 #
 # Policy is an event-sourced ledger: download ONE source policy -> edit -> policy
 # upload (genesis-then-edit on its uuid; uuids are carried for lineage). `catalog`
@@ -126,16 +135,174 @@ verb="${REST[1]:-}"
 
 if [[ -z "$noun" || "$noun" == "help" ]]; then usage; exit 0; fi
 
-if [[ "$noun" == "client-key" ]]; then
-  [[ "$verb" == "mint" ]] || { echo "error: client-key mint" >&2; exit 2; }
-  python3 -c "import hashlib,secrets; k='emem_'+secrets.token_urlsafe(32); print('key: ', k); print('hash:', hashlib.sha256(k.encode()).hexdigest())"
-  cat >&2 <<'NOTE'
-Add the hash to API_KEY_HASH_LIST in local.env (comma-separated) and restart
-the engine; give the key to one holder - an agent's harness, or the console
-(a dedicated key for people). The key is shown once - keep it, or mint
-another. Remove the hash to revoke it.
-NOTE
+if [[ "$noun" == "init" ]]; then
+  HERE="$(cd "$(dirname "$0")" && pwd)"
+  ENV_FILE="$HERE/.env"
+  EXAMPLE="$HERE/.env.example"
+  ARCHIVE="$HOME/ememory-data/archive"
+  set -- "${REST[@]:1}"
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --archive-dir) [[ $# -ge 2 ]] || { echo "error: init: --archive-dir needs a path" >&2; exit 2; }
+                     ARCHIVE="$2"; shift 2 ;;
+      *) echo "error: init [--archive-dir PATH] - unknown argument '$1'" >&2; exit 2 ;;
+    esac
+  done
+  if [[ -e "$ENV_FILE" || -L "$ENV_FILE" ]]; then
+    echo "error: $ENV_FILE already exists - init writes a new one and never overwrites. Edit it, or move it away and run init again." >&2
+    exit 2
+  fi
+  [[ -f "$EXAMPLE" ]] || { echo "error: no $EXAMPLE to start from" >&2; exit 2; }
+  case "$ARCHIVE/" in
+    /*) ;;
+    *) echo "error: init: --archive-dir must be an absolute path (got '$ARCHIVE')" >&2; exit 2 ;;
+  esac
+  case "$ARCHIVE/" in
+    */./*|*/../*) echo "error: init: --archive-dir must have no . or .. in it" >&2; exit 2 ;;
+  esac
+  case "$ARCHIVE" in
+    *[[:space:]\"\'\\\$\#]*)
+      echo 'error: init: --archive-dir must have no spaces, quotes, \, $ or # in it' >&2; exit 2 ;;
+  esac
+  if command -v openssl >/dev/null 2>&1; then
+    _hex()    { openssl rand -hex "$1"; }
+    _base64() { openssl rand -base64 32; }
+  elif command -v python3 >/dev/null 2>&1; then
+    _hex()    { python3 -c 'import secrets, sys; print(secrets.token_hex(int(sys.argv[1])))' "$1"; }
+    _base64() { python3 -c 'import base64, os; print(base64.b64encode(os.urandom(32)).decode())'; }
+  else
+    echo "error: init needs openssl or python3 to generate the passwords and keys; neither is on PATH" >&2
+    exit 2
+  fi
+  ARCHIVE_KEY_VALUE="$(_base64)"
+  TMP_ENV="$(umask 077 && mktemp "$HERE/.env.init.XXXXXX")"
+  trap 'rm -f "$TMP_ENV" "$TMP_ENV.next"' EXIT
+  cp "$EXAMPLE" "$TMP_ENV"
+  _set() {  # NAME VALUE: the one `NAME=` line of the file becomes NAME=VALUE
+    [[ -n "$2" ]] || { echo "error: init: could not generate $1" >&2; exit 2; }
+    N="$1" V="$2" awk 'BEGIN { n = ENVIRON["N"]; v = ENVIRON["V"] }
+      index($0, n "=") == 1 { print n "=" v; c++; next } { print }
+      END { exit (c == 1 ? 0 : 3) }' "$TMP_ENV" > "$TMP_ENV.next" ||
+      { echo "error: init: .env.example must hold exactly one '$1=' line" >&2; exit 2; }
+    mv "$TMP_ENV.next" "$TMP_ENV"
+  }
+  _set POSTGRES_PASSWORD "$(_hex 24)"
+  _set REDIS_PASSWORD "$(_hex 24)"
+  _set ARCHIVE_ACCESS_KEY "$(_hex 20)"
+  _set ARCHIVE_SECRET_KEY "$(_hex 32)"
+  _set ARCHIVE_KEY "$ARCHIVE_KEY_VALUE"
+  _set ARCHIVE_DIR "$ARCHIVE"
+  mkdir -p "$ARCHIVE"
+  chmod 600 "$TMP_ENV"
+  [[ -e "$ENV_FILE" || -L "$ENV_FILE" ]] && { echo "error: $ENV_FILE appeared while init ran; left it alone" >&2; exit 2; }
+  mv "$TMP_ENV" "$ENV_FILE"
+  KEYS="$HERE/conf/keys.yaml"
+  KEYS_NOTE="conf/keys.yaml is already there - left as it is."
+  if [[ ! -e "$KEYS" ]]; then
+    awk '{ print } /^keys:/ { exit }' "$HERE/conf/keys.yaml.example" > "$KEYS"
+    KEYS_NOTE="Started conf/keys.yaml (no keys yet)."
+  fi
+  echo "Wrote $ENV_FILE: fresh POSTGRES_PASSWORD, REDIS_PASSWORD, ARCHIVE_ACCESS_KEY,"
+  echo "ARCHIVE_SECRET_KEY and ARCHIVE_KEY, and ARCHIVE_DIR=$ARCHIVE (made)."
+  echo "$KEYS_NOTE"
+  echo
+  echo "Save ARCHIVE_KEY in your password manager now — a lost key is an unreadable archive:"
+  echo
+  echo "ARCHIVE_KEY=$ARCHIVE_KEY_VALUE"
+  echo
+  echo "Next:"
+  echo "  docker compose up -d"
+  echo "  To turn auth on: ./e.sh client-key create --label you, then AUTH_ENABLED=true in .env"
   exit 0
+fi
+
+if [[ "$noun" == "client-key" ]]; then
+  [[ "$verb" == "create" ]] || { echo "error: client-key create --label L [--profiles a,b] [--policies p,q] [--operations x,y] [--file PATH]" >&2; exit 2; }
+  KEYS_FILE="$(cd "$(dirname "$0")" && pwd)/conf/keys.yaml"
+  exec python3 - "$KEYS_FILE" "${REST[@]:2}" <<'PY'
+import hashlib, json, os, re, secrets, sys, tempfile
+
+OPERATIONS = ("policies", "peers", "bundles", "admin", "records")
+LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
+HEADER = ("# conf/keys.yaml - this engine's client keys (./e.sh client-key create).\n"
+          "# See conf/keys.yaml.example for the shape. Read when the engine starts.\n"
+          "keys:\n")
+
+def fail(text):
+    sys.stderr.write(f"error: {text}\n")
+    sys.exit(2)
+
+path, args = sys.argv[1], sys.argv[2:]
+opts = {}
+while args:
+    flag = args.pop(0)
+    if flag not in ("--label", "--profiles", "--policies", "--operations", "--file"):
+        fail(f"client-key create: unknown argument {flag!r}")
+    if not args:
+        fail(f"client-key create: {flag} needs a value")
+    opts[flag[2:]] = args.pop(0)
+label = opts.get("label", "")
+if not LABEL.fullmatch(label):
+    fail("client-key create needs --label: a word of letters, digits, '.', '_' or "
+         "'-' (up to 64), starting with a letter or digit - it names the key")
+path = opts.get("file", path)
+scope = {}
+for field in ("profiles", "policies", "operations"):
+    if field in opts:
+        names = [n.strip() for n in opts[field].split(",")]
+        if not all(names):
+            fail(f"--{field}: a comma-separated list of names, none empty")
+        scope[field] = names
+bad = sorted(set(scope.get("operations", ())) - set(OPERATIONS))
+if bad:
+    fail(f"--operations: unknown {', '.join(bad)}; the operations are {', '.join(OPERATIONS)}")
+
+text = HEADER
+mode = 0o644
+if os.path.exists(path):
+    with open(path) as fh:
+        text = fh.read()
+    mode = os.stat(path).st_mode & 0o777
+    if not re.search(r"^keys:[ \t]*(#.*)?$", text, re.M):
+        fail(f"{path} has no `keys:` line to append to; fix the file (see "
+             "conf/keys.yaml.example) and create the key again")
+    held = re.findall(r"^\s*-?\s*label:\s*[\"']?([^\"'\s#]+)", text, re.M)
+    if label in held:
+        fail(f"{path} already holds a key labelled '{label}'; labels are unique")
+    if text and not text.endswith("\n"):
+        text += "\n"
+
+key = "emem_" + secrets.token_urlsafe(32)
+entry = f"  - label: {label}\n    hash: \"{hashlib.sha256(key.encode()).hexdigest()}\"\n"
+for field, names in scope.items():
+    entry += f"    {field}: [{', '.join(json.dumps(n) for n in names)}]\n"
+
+directory = os.path.dirname(os.path.abspath(path))
+os.makedirs(directory, exist_ok=True)
+fd, tmp = tempfile.mkstemp(prefix=".keys.", dir=directory)
+try:
+    with os.fdopen(fd, "w") as fh:
+        fh.write(text + entry)
+    os.chmod(tmp, mode & ~0o022)
+    os.replace(tmp, path)
+except BaseException:
+    if os.path.exists(tmp):
+        os.unlink(tmp)
+    raise
+
+if not scope:
+    act_as, ops = "every profile", "every"
+else:
+    act_as = ", ".join(scope.get("profiles", []) +
+                       [f"the profiles of policy {p}" for p in scope.get("policies", [])]) or "no profile"
+    ops = ", ".join(scope.get("operations", [])) or "none"
+shown = "conf/keys.yaml" if "file" not in opts else path
+print(f'Created a client key for "{label}".  It may act as: {act_as}  '
+      f"(operations: {ops})  Its hash was added to {shown}; restart the stack "
+      "to use it.")
+print()
+print(f"{key}   <- give this to the agent; shown once, never stored")
+PY
 fi
 
 [[ -z "$URL" ]] && { echo "error: no URL (pass --url or set EMEMORY_URL)" >&2; exit 2; }
