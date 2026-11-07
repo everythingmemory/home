@@ -1,43 +1,36 @@
 # Profiles
 
-Two settings choose which component lists the engine runs: PIPELINE_PROFILE for ingest and question search, and TEMPORAL_PROFILE for e_timeline. Both name blocks in conf/profiles.yaml.
+One setting, PIPELINE_PROFILE, chooses which component lists the engine runs for ingest, e_gather and e_timeline. It names a block in conf/profiles.yaml; the release ships one, profile_v1.
 
-## What each setting selects
+## What the setting selects
 
-| Setting | Default | Selects | Used by |
-|---|---|---|---|
-| `PIPELINE_PROFILE` | `retrieval_v1` | A block with an `ingestion` list and a `curate` list | Ingest (`e_ingest`, `e_update`), and `e_gather` `find` |
-| `TEMPORAL_PROFILE` | `timeline_v1` | A block with the `temporal`, `temporal_discourse` and `temporal_find` lists | `e_timeline` |
-
-The structural actions of `e_gather` (`intersect`, `union`, `traverse`) run the fixed `gather` block in the same file.
-
-## The shipped profiles
-
-| Profile | Ingest extractors | Notes |
+| Setting | Default | Selects |
 |---|---|---|
-| `retrieval_v1` | WordNet, chrono-node | The default, and the one pipeline profile the release ships. Runs on the shipped stack |
+| `PIPELINE_PROFILE` | `profile_v1` | A block in `conf/profiles.yaml` with one component list per call below |
 
-| Temporal profile | Reads a question's dates with | Notes |
-|---|---|---|
-| `timeline_v1` | chrono-node | The default. Runs on the shipped stack |
-| `temporal` | Duckling | Needs Duckling's services, which the shipped stack does not run |
+| Pipeline | Runs for |
+|---|---|
+| `ingest` | `e_ingest`, `e_update` |
+| `gather_find` | `e_gather` `find` |
+| `gather` | `e_gather` `intersect`, `union` and `traverse` |
+| `timeline` | `e_timeline` `list`, `intersect` and `traverse` |
+| `timeline_conversational` | The same, with `is_conversational_only` |
+| `timeline_find` | `e_timeline` `find` |
+
+## The shipped profile
+
+`profile_v1` extracts with WordNet and chrono-node at ingest, and reads a question's dates for `e_timeline` with chrono-node. It runs on the shipped stack and needs the `chrono` entry in `conf/plugins.yaml`.
 
 The question search runs tags and edge properties, full text, record vectors and window vectors, merged. See [search](../../agents-how-to/finding-records.md).
 
-- Each profile in `conf/profiles.yaml` lists, per path, its components in the order they run; a key named after a component holds its settings (for example `slice_page: {page_size: 30}`).
-- `ingestion` runs its components one after another; a record that fails validation goes no further.
-- `curate` (`e_gather` `find`) runs its retrievers at once, then the rest in order.
-- `temporal` serves `e_timeline` `list`, `intersect` and `traverse`; `temporal_discourse` the same with conversational records only; `temporal_find` serves `find`.
-- The release ships `retrieval_v1`, `timeline_v1`, `temporal`, `gather`, and `default`, a placeholder that runs nothing.
-- `timeline_v1` is `temporal` with the question's dates read by chrono-node; it inherits the rest (`<<: *temporal`).
-- Both defaults need the `chrono` entry in `conf/plugins.yaml`.
-- Switching to a pipeline profile with other extract plugins changes the tag version, so every record's tags are derived again, once.
+- The block lists, per pipeline, its components in the order they run. A key named after a component holds that component's settings, one set for every pipeline (for example `slice_page: {page_size: 30}`, the default page of `e_gather` and `e_timeline`).
+- `ingest` runs its components one after another; a record that fails validation goes no further.
+- `gather_find` runs its retrievers at once, then the rest in order.
+- Switching to a profile with other extract plugins changes the tag version, so every record's tags are derived again, once.
 
 ## Switching
 
-Set the name in `.env` and restart the stack. An unknown `PIPELINE_PROFILE` or `TEMPORAL_PROFILE` — a name that is not a block in `conf/profiles.yaml` — or a temporal block missing one of its three lists, stops the engine at startup with the reason. A switch changes what runs from then on; records already ingested keep the tags they have.
-
-`/health` names the pipeline profile and the temporal profile in force.
+A profile of your own goes in a `profiles.yaml` under `CONF_OVERRIDE_DIR`, which replaces the shipped file whole, so copy `profile_v1` into it too. Set `PIPELINE_PROFILE` in `.env` and restart the stack. The engine stops at startup with the reason when `PIPELINE_PROFILE` names no block in the file, or a block without one of the six lists above. A switch changes what runs from then on; records already ingested keep the tags they have.
 
 ## Reference
 

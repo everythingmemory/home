@@ -14,7 +14,7 @@ The EPG gives you exactness: intersect labels and you get every record that matc
 
 ## The four lookups
 
-`find` runs the components the pipeline profile (`PIPELINE_PROFILE`) lists for question search. Under the shipped profile, `retrieval_v1`, four lookups run:
+`find` runs the components the pipeline profile (`PIPELINE_PROFILE`) lists for question search. Under the shipped profile, `profile_v1`, four lookups run:
 
 | Lookup | What it matches |
 |---|---|

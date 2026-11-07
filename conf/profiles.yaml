@@ -1,61 +1,32 @@
-# The pipeline profiles: the component lists PIPELINE_PROFILE and TEMPORAL_PROFILE select.
+# The pipeline profile PIPELINE_PROFILE selects: one component list per MCP call.
 # Details: https://everythingmemory.ai/docs/reference/advanced-settings/profiles/
 
-# A placeholder that runs nothing.
-default:
-  curate_original:
-    components: [not-configured]
-  ingestion:
-    components: [not-configured]
-
-# The default PIPELINE_PROFILE: ingest and e_gather find.
-retrieval_v1:
-  curate:
+profile_v1:
+  # e_ingest.
+  ingest:
+    components: [validate, persist, agent_properties, plugin_wordnet, plugin_chrono, embed, archive]
+  # e_gather find.
+  gather_find:
     components: [tokenize_query, tag_property_retrieve, tsquery_retrieve, semantic,
                  window_semantic, window_expand, true_distance_balanced_dedup,
                  slice_page, load_srs, format_output]
-  ingestion:
-    components: [validate, persist, agent_properties, plugin_wordnet, plugin_chrono, embed, archive]
-    allow_any_source_type: true
-  tag_property_retrieve:
-    max_candidates: 200
-  semantic:
-    max_srs: 200
-  window_semantic:
-    max_srs: 400
-  tsquery_retrieve:
-    max_candidates: 20
-  true_distance_balanced_dedup:
-    semantic: 40
-    property: 35
-    window: 20
-    tsquery: 5
-  slice_page:
-    page_size: 30
-  format_output:
-    attribution_detail: 5
-
-# The structural actions of e_gather.
-gather:
+  # e_gather intersect, union and traverse.
   gather:
     components: [gather_resolve, order_using_context, slice_page, load_srs, format_output]
-  slice_page:
-    page_size: 50
-
-# e_timeline, with the question's dates read by Duckling.
-temporal: &temporal
-  temporal:
-    components: [temporal_parse, tag_temporal_resolve, tag_temporal_shed,
+  # e_timeline list, intersect and traverse; the question's dates are read by chrono.
+  timeline:
+    components: [temporal_parse_v2, tag_temporal_resolve, tag_temporal_shed,
                  load_srs_with_tags, tag_temporal_order, slice_page, format_output]
-  temporal_discourse:
-    components: [temporal_parse, tag_temporal_resolve, tag_temporal_shed,
+  # The same, with is_conversational_only.
+  timeline_conversational:
+    components: [temporal_parse_v2, tag_temporal_resolve, tag_temporal_shed,
                  discourse_filter, load_srs_with_tags, tag_temporal_order, slice_page, format_output]
-  temporal_find:
+  # e_timeline find.
+  timeline_find:
     components: [tokenize_query, tag_property_retrieve, tsquery_retrieve, semantic,
                  window_semantic, window_expand, true_distance_balanced_dedup,
                  load_srs_with_tags, tag_temporal_order, slice_page, format_output]
-  tag_temporal_resolve:
-    ceiling: 200
+
   tag_property_retrieve:
     max_candidates: 200
   semantic:
@@ -69,17 +40,9 @@ temporal: &temporal
     property: 35
     window: 20
     tsquery: 5
+  tag_temporal_resolve:
+    ceiling: 200
   slice_page:
     page_size: 30
   format_output:
     attribution_detail: 5
-
-# The default TEMPORAL_PROFILE: temporal, with the question's dates read by chrono.
-timeline_v1:
-  <<: *temporal
-  temporal:
-    components: [temporal_parse_v2, tag_temporal_resolve, tag_temporal_shed,
-                 load_srs_with_tags, tag_temporal_order, slice_page, format_output]
-  temporal_discourse:
-    components: [temporal_parse_v2, tag_temporal_resolve, tag_temporal_shed,
-                 discourse_filter, load_srs_with_tags, tag_temporal_order, slice_page, format_output]

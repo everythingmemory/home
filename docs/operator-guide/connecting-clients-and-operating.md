@@ -55,7 +55,7 @@ Open `http://127.0.0.1:8766/`. The console passes `/api` to the API service. Wit
 curl http://localhost:8765/health
 ```
 
-The reply's `status` is `healthy`, or `degraded` when the database is unreachable or the embedding width is not declared, cannot be read, or differs from what the endpoint returned (the reason under `embedding.state`). It names the pipeline and temporal profiles in force. `/health` needs no key.
+The reply's `status` is `healthy`, or `degraded` when the database is unreachable or the embedding width is not declared, cannot be read, or differs from what the endpoint returned (the reason under `embedding.state`). `/health` needs no key.
 
 ## Logs
 

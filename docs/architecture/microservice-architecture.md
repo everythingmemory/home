@@ -115,7 +115,7 @@ The default route needs no key and sends nothing off the machine. The gateway ca
 | `/api/v2/` | The REST API: the tool operations, and routes for policies and agent profiles, lanes, edge properties, records, embedding spaces, bundle export and import, and administration |
 | `/api/v1/feed` | The change feed, as server-sent events |
 | `/api/v1/sync/` | The exchange between peers |
-| `/health` | The engine's health: `healthy`, or `degraded` when the database is unreachable, or when the embedding width is not declared, cannot be read, or differs from the width of a vector the endpoint returned. The pipeline profile and the temporal profile in force are named in the reply. |
+| `/health` | The engine's health: `healthy`, or `degraded` when the database is unreachable, or when the embedding width is not declared, cannot be read, or differs from the width of a vector the endpoint returned. |
 
 `e.sh` is a command-line script over the REST API, for agent profiles, lanes, policies, records, edge properties, peers, ingesting files, bundle export and import, and creating client keys (`client-key create`) and first setup (`init`), which run on the machine without calling the engine.
 

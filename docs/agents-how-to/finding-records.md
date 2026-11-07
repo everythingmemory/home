@@ -16,7 +16,7 @@ Whenever the agent needs records and does not have their ids. It knows a questio
 | `count` | `match`, or `sr_id` | Counts only, to size a result before fetching it |
 | `group` | `by`, a label; optional `match`, `top` | Each value of that label, with the number of records under it |
 
-All take `page` and `page_size` (30 by default for `find`, 50 for `intersect`, `union` and `traverse`, 20 for `group`; `count` returns counts only) and `agent_profile`. `intersect`, `union` and `traverse` also take `context`, a phrase whose meaning reorders the results. The structural actions are described in [the EPG](../architecture/edge-property-graph.md).
+All take `page` and `page_size` (30 by default for `find`, `intersect`, `union` and `traverse`, 20 for `group`; `count` returns counts only) and `agent_profile`. `intersect`, `union` and `traverse` also take `context`, a phrase whose meaning reorders the results. The structural actions are described in [the EPG](../architecture/edge-property-graph.md).
 
 ## Response
 Each record in `srs` carries its `sr_id` and `content`. A `find` result also carries `distance`, and, on a page of four or more, `distance_quartile` (1 is the closest quarter of the page); the page carries `distance_spread` (`tight`, `moderate` or `huge`). A distance is comparable only within one question.

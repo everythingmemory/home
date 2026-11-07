@@ -32,7 +32,7 @@ plugins:
     optional: true
     json_input: leaves
 
-  # The shipped time reader (retrieval_v1 and timeline_v1).
+  # The shipped time reader (profile_v1).
   chrono:
     type: extract
     url: http://plugin-chrono:8000/invoke

@@ -4,7 +4,7 @@ Ingest is a named sequence of components, read from conf/profiles.yaml. Some of 
 
 ## The ingest pipeline
 
-The pipeline is a list of component names in a pipeline profile in `conf/profiles.yaml`, selected by `PIPELINE_PROFILE` (see [profiles](profiles.md)). The shipped default, `retrieval_v1`, runs ingest in this order:
+The pipeline is a list of component names in a pipeline profile in `conf/profiles.yaml`, selected by `PIPELINE_PROFILE` (see [profiles](profiles.md)). The shipped default, `profile_v1`, runs ingest in this order:
 
 | Component | Does |
 |---|---|
@@ -55,7 +55,7 @@ plugins:
 
 A 4xx reply is not retried and fails the background job for that record, whatever `optional` says; the steps after it, embedding included, do not run.
 
-Registered is not running. Each `extract` entry becomes a component named `plugin_<name>` that a pipeline profile can list, and it is called only when a profile lists it, or when a retrieval component names it: `e_timeline` reads a question's dates through `chrono` under `timeline_v1`, and `e_gather` lemmatizes a question through `wordnet`. The file also registers `duckling` and `json_leaf`, whose services the shipped stack does not run; only the older profiles that name them call them.
+Registered is not running. Each `extract` entry becomes a component named `plugin_<name>` that a pipeline profile can list, and it is called only when a profile lists it, or when a retrieval component names it: `e_timeline` reads a question's dates through `chrono` under `profile_v1`, and `e_gather` lemmatizes a question through `wordnet`. The file also registers `duckling` and `json_leaf`, whose services the shipped stack does not run; no shipped profile names them.
 
 - `wordnet` stays registered whatever the profile: `e_gather` `find` lemmatizes the question through it, and full-text search runs on those words.
 - `chrono` reads JSON content raw: on leaves joined by blank lines one match could run across two values.
