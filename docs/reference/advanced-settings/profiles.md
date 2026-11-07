@@ -24,6 +24,15 @@ The structural actions of `e_gather` (`intersect`, `union`, `traverse`) run the 
 
 The question search runs tags and edge properties, full text, record vectors and window vectors, merged. See [search](../../agents-how-to/finding-records.md).
 
+- Each profile in `conf/profiles.yaml` lists, per path, its components in the order they run; a key named after a component holds its settings (for example `slice_page: {page_size: 30}`).
+- `ingestion` runs its components one after another; a record that fails validation goes no further.
+- `curate` (`e_gather` `find`) runs its retrievers at once, then the rest in order.
+- `temporal` serves `e_timeline` `list`, `intersect` and `traverse`; `temporal_discourse` the same with conversational records only; `temporal_find` serves `find`.
+- The release ships `retrieval_v1`, `timeline_v1`, `temporal`, `gather`, and `default`, a placeholder that runs nothing.
+- `timeline_v1` is `temporal` with the question's dates read by chrono-node; it inherits the rest (`<<: *temporal`).
+- Both defaults need the `chrono` entry in `conf/plugins.yaml`.
+- Switching to a pipeline profile with other extract plugins changes the tag version, so every record's tags are derived again, once.
+
 ## Switching
 
 Set the name in `.env` and restart the stack. An unknown `PIPELINE_PROFILE` or `TEMPORAL_PROFILE` — a name that is not a block in `conf/profiles.yaml` — or a temporal block missing one of its three lists, stops the engine at startup with the reason. A switch changes what runs from then on; records already ingested keep the tags they have.

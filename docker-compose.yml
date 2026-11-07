@@ -38,7 +38,7 @@
 
 services:
   ememory-api:
-    image: ghcr.io/everythingmemory/core:1.2.14@sha256:c29f06e224f438367b8b3051335735b288de36663d375fbffa8b131fd698401b
+    image: ghcr.io/everythingmemory/core:1.2.15@sha256:ba83fe3cb7838b1fcff22d84cc5c484df82f8f21812ce3f197c30ef51313273a
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
     # the archive (47,934 records, 2026-10-14). A runaway is killed and
@@ -64,8 +64,8 @@ services:
       - DB_MODE=postgresql
       - POSTGRES_HOST=ememory-postgres
       - POSTGRES_PORT=5432
-      - POSTGRES_DB=${POSTGRES_DB:?POSTGRES_DB is required - set it in .env}
-      - POSTGRES_USER=${POSTGRES_USER:?POSTGRES_USER is required - set it in .env}
+      - POSTGRES_DB=${POSTGRES_DB:-ememory}
+      - POSTGRES_USER=${POSTGRES_USER:-ememory}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in .env}
       - REDIS_HOST=ememory-redis
       - REDIS_PORT=6380
@@ -74,6 +74,14 @@ services:
       # ememory-worker-archive. The flag must be identical on the app and BOTH
       # workers — this stack defines the second worker, so it is on here.
       - ARCHIVE_QUEUE_ENABLED=${ARCHIVE_QUEUE_ENABLED:-true}
+      # THE STACK'S DEFAULTS: the engine's own are off and blank, so the
+      # shipped stack states its own here — the schedule and the archive on, in
+      # the bundled store (archive-store). A line in .env overrides each.
+      - CRON_ENABLED=${CRON_ENABLED:-true}
+      - ARCHIVE_ENABLED=${ARCHIVE_ENABLED:-true}
+      - ARCHIVE_ENDPOINT_URL=${ARCHIVE_ENDPOINT_URL:-http://archive-store:8333}
+      - ARCHIVE_REGION=${ARCHIVE_REGION:-us-east-1}
+      - ARCHIVE_BUCKET=${ARCHIVE_BUCKET:-ememory-archive}
     ports:
       # LOOPBACK ONLY: the template runs auth off for a first try,
       # so the port must not reach the network. docker-compose.open.yml is
@@ -118,7 +126,7 @@ services:
     image: percona/percona-distribution-postgresql:17.11.1-4@sha256:32a2c3ce3147ff269a5b0d56e1ae28823131b7a98a95a67d67723d4e78017a94
     restart: unless-stopped
     # ENCRYPTED AT REST: Percona's pg_tde, preloaded here and set up
-    # once at creation by conf/init-tde.sql — a file keyring in the
+    # once at creation by scripts/initdb/00-init-tde.sql — a file keyring in the
     # ememory_tde_keys volume, `tde_heap` the default access method, WAL
     # encrypted. The key volume must be writable by postgres (uid 26), and a
     # fresh named volume is root's: the container starts as root only to hand
@@ -140,8 +148,8 @@ services:
     env_file:
       - .env
     environment:
-      - POSTGRES_DB=${POSTGRES_DB:?POSTGRES_DB is required - set it in .env}
-      - POSTGRES_USER=${POSTGRES_USER:?POSTGRES_USER is required - set it in .env}
+      - POSTGRES_DB=${POSTGRES_DB:-ememory}
+      - POSTGRES_USER=${POSTGRES_USER:-ememory}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in .env}
       # UTF8, stated: unset, initdb takes the image's locale and
       # made the fleet's databases SQL_ASCII. Read once, when the database is
@@ -164,8 +172,8 @@ services:
       - ememory_tde_keys:/tde_keys
       # Run in name order on an empty data directory: encryption first, so
       # nothing is created before it.
-      - ./conf/init-tde.sql:/docker-entrypoint-initdb.d/00-init-tde.sql:ro
-      - ./conf/init-pgvector.sql:/docker-entrypoint-initdb.d/10-init-pgvector.sql:ro
+      - ./scripts/initdb/00-init-tde.sql:/docker-entrypoint-initdb.d/00-init-tde.sql:ro
+      - ./scripts/initdb/10-init-pgvector.sql:/docker-entrypoint-initdb.d/10-init-pgvector.sql:ro
     healthcheck:
       # The container's own POSTGRES_USER / POSTGRES_DB (`$$` defers to its
       # shell), the values the database was created with — required above.
@@ -250,7 +258,7 @@ services:
     image: chrislusf/seaweedfs:3.97@sha256:bb05d66d2963b1cc48073190781c3dd29e2c4c88a2ae2986bf58e38c86d89c6e
     restart: "no"
     environment:
-      - ARCHIVE_BUCKET=${ARCHIVE_BUCKET}
+      - ARCHIVE_BUCKET=${ARCHIVE_BUCKET:-ememory-archive}
       - ARCHIVE_ACCESS_KEY=${ARCHIVE_ACCESS_KEY}
       - ARCHIVE_SECRET_KEY=${ARCHIVE_SECRET_KEY}
       - ARCHIVE_KEY=${ARCHIVE_KEY}
@@ -352,7 +360,7 @@ services:
   # conf/gateway.yaml routes EMBEDDING_MODEL=nomic-embed-text to it. It
   # publishes nothing; the gateway reaches it by service name.
   local-embed:
-    image: ghcr.io/everythingmemory/local-embed:1.2.14@sha256:18e77c31b77b9cb8d15cfc4e788ca4b995d4f543a5d32e56ce9b5e37e10a8122
+    image: ghcr.io/everythingmemory/local-embed:1.2.15@sha256:f1d7591e11f22cbb1b46cf267aca9d41c49b022c0c30671ecf311627d47ca3be
     restart: unless-stopped
     # The model is 146 MB. Measured 2026-10-30: 81 MiB after the same burst
     # through the gateway. The ceiling is generous until measured on a corpus.
@@ -378,7 +386,7 @@ services:
   console:
     # Built in the console's own repository; pinned here with the rest by
     # scripts/pin-images.sh. Bump only in an upgrade cycle.
-    image: ghcr.io/everythingmemory/console:1.2.14@sha256:50ef46a136abb90e5b3cc2036d980c8ea785ac3f265b0663104ac7fae0fd3125
+    image: ghcr.io/everythingmemory/console:1.2.15@sha256:03292ee769c9ee2e64aba37497f403f267c3f5012aa0fd13f988b8b5a1d6f752
     restart: unless-stopped
     # Started after the engine's container exists, so the `ememory-api` name
     # resolves when the console first looks; the engine being ready is not
@@ -410,7 +418,7 @@ services:
     # no wget or curl for one written here to call.
 
   ememory-worker:
-    image: ghcr.io/everythingmemory/core:1.2.14@sha256:c29f06e224f438367b8b3051335735b288de36663d375fbffa8b131fd698401b
+    image: ghcr.io/everythingmemory/core:1.2.15@sha256:ba83fe3cb7838b1fcff22d84cc5c484df82f8f21812ce3f197c30ef51313273a
     entrypoint: ["python", "-m", "arq", "core.worker.WorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
@@ -434,14 +442,20 @@ services:
       - DB_MODE=postgresql
       - POSTGRES_HOST=ememory-postgres
       - POSTGRES_PORT=5432
-      - POSTGRES_DB=${POSTGRES_DB:?POSTGRES_DB is required - set it in .env}
-      - POSTGRES_USER=${POSTGRES_USER:?POSTGRES_USER is required - set it in .env}
+      - POSTGRES_DB=${POSTGRES_DB:-ememory}
+      - POSTGRES_USER=${POSTGRES_USER:-ememory}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in .env}
       - REDIS_HOST=ememory-redis
       - REDIS_PORT=6380
       - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required - set it in .env}
       - WORKER_MAX_JOBS=${WORKER_MAX_JOBS:-1}
       - ARCHIVE_QUEUE_ENABLED=${ARCHIVE_QUEUE_ENABLED:-true}
+      # The stack's defaults, as ememory-api states them.
+      - CRON_ENABLED=${CRON_ENABLED:-true}
+      - ARCHIVE_ENABLED=${ARCHIVE_ENABLED:-true}
+      - ARCHIVE_ENDPOINT_URL=${ARCHIVE_ENDPOINT_URL:-http://archive-store:8333}
+      - ARCHIVE_REGION=${ARCHIVE_REGION:-us-east-1}
+      - ARCHIVE_BUCKET=${ARCHIVE_BUCKET:-ememory-archive}
       - RUN_MIGRATIONS=false
     volumes:
       # Configuration only — the code is in the image. A development stack can mount
@@ -460,7 +474,7 @@ services:
   # hour. Same image, same mounts, same env as ememory-worker — only the arq
   # settings class and the concurrency differ.
   ememory-worker-archive:
-    image: ghcr.io/everythingmemory/core:1.2.14@sha256:c29f06e224f438367b8b3051335735b288de36663d375fbffa8b131fd698401b
+    image: ghcr.io/everythingmemory/core:1.2.15@sha256:ba83fe3cb7838b1fcff22d84cc5c484df82f8f21812ce3f197c30ef51313273a
     entrypoint: ["python", "-m", "arq", "core.worker.ArchiveWorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
@@ -484,13 +498,19 @@ services:
       - DB_MODE=postgresql
       - POSTGRES_HOST=ememory-postgres
       - POSTGRES_PORT=5432
-      - POSTGRES_DB=${POSTGRES_DB:?POSTGRES_DB is required - set it in .env}
-      - POSTGRES_USER=${POSTGRES_USER:?POSTGRES_USER is required - set it in .env}
+      - POSTGRES_DB=${POSTGRES_DB:-ememory}
+      - POSTGRES_USER=${POSTGRES_USER:-ememory}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in .env}
       - REDIS_HOST=ememory-redis
       - REDIS_PORT=6380
       - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required - set it in .env}
       - ARCHIVE_QUEUE_ENABLED=${ARCHIVE_QUEUE_ENABLED:-true}
+      # The stack's defaults, as ememory-api states them.
+      - CRON_ENABLED=${CRON_ENABLED:-true}
+      - ARCHIVE_ENABLED=${ARCHIVE_ENABLED:-true}
+      - ARCHIVE_ENDPOINT_URL=${ARCHIVE_ENDPOINT_URL:-http://archive-store:8333}
+      - ARCHIVE_REGION=${ARCHIVE_REGION:-us-east-1}
+      - ARCHIVE_BUCKET=${ARCHIVE_BUCKET:-ememory-archive}
       - ARCHIVE_WORKER_MAX_JOBS=${ARCHIVE_WORKER_MAX_JOBS:-10}
       - RUN_MIGRATIONS=false
     volumes:
@@ -512,7 +532,7 @@ services:
   # the other two. It is the ONLY worker that runs task_derive_tags, so the
   # tag index is not filled without it.
   ememory-worker-maintenance:
-    image: ghcr.io/everythingmemory/core:1.2.14@sha256:c29f06e224f438367b8b3051335735b288de36663d375fbffa8b131fd698401b
+    image: ghcr.io/everythingmemory/core:1.2.15@sha256:ba83fe3cb7838b1fcff22d84cc5c484df82f8f21812ce3f197c30ef51313273a
     entrypoint: ["python", "-m", "arq", "core.worker.MaintenanceWorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
@@ -536,13 +556,19 @@ services:
       - DB_MODE=postgresql
       - POSTGRES_HOST=ememory-postgres
       - POSTGRES_PORT=5432
-      - POSTGRES_DB=${POSTGRES_DB:?POSTGRES_DB is required - set it in .env}
-      - POSTGRES_USER=${POSTGRES_USER:?POSTGRES_USER is required - set it in .env}
+      - POSTGRES_DB=${POSTGRES_DB:-ememory}
+      - POSTGRES_USER=${POSTGRES_USER:-ememory}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in .env}
       - REDIS_HOST=ememory-redis
       - REDIS_PORT=6380
       - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required - set it in .env}
       - ARCHIVE_QUEUE_ENABLED=${ARCHIVE_QUEUE_ENABLED:-true}
+      # The stack's defaults, as ememory-api states them.
+      - CRON_ENABLED=${CRON_ENABLED:-true}
+      - ARCHIVE_ENABLED=${ARCHIVE_ENABLED:-true}
+      - ARCHIVE_ENDPOINT_URL=${ARCHIVE_ENDPOINT_URL:-http://archive-store:8333}
+      - ARCHIVE_REGION=${ARCHIVE_REGION:-us-east-1}
+      - ARCHIVE_BUCKET=${ARCHIVE_BUCKET:-ememory-archive}
       - MAINTENANCE_WORKER_MAX_JOBS=${MAINTENANCE_WORKER_MAX_JOBS:-5}
       - RUN_MIGRATIONS=false
     volumes:
@@ -562,7 +588,7 @@ services:
   # ememory-worker did. It is the ONLY worker that runs task_ingest, so an
   # asynchronous ingest is not extracted or embedded without it.
   ememory-worker-ingest:
-    image: ghcr.io/everythingmemory/core:1.2.14@sha256:c29f06e224f438367b8b3051335735b288de36663d375fbffa8b131fd698401b
+    image: ghcr.io/everythingmemory/core:1.2.15@sha256:ba83fe3cb7838b1fcff22d84cc5c484df82f8f21812ce3f197c30ef51313273a
     entrypoint: ["python", "-m", "arq", "core.worker.IngestWorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
     restart: unless-stopped
     # Memory limit: ememory-worker's, which ran task_ingest until this worker
@@ -585,13 +611,19 @@ services:
       - DB_MODE=postgresql
       - POSTGRES_HOST=ememory-postgres
       - POSTGRES_PORT=5432
-      - POSTGRES_DB=${POSTGRES_DB:?POSTGRES_DB is required - set it in .env}
-      - POSTGRES_USER=${POSTGRES_USER:?POSTGRES_USER is required - set it in .env}
+      - POSTGRES_DB=${POSTGRES_DB:-ememory}
+      - POSTGRES_USER=${POSTGRES_USER:-ememory}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in .env}
       - REDIS_HOST=ememory-redis
       - REDIS_PORT=6380
       - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required - set it in .env}
       - ARCHIVE_QUEUE_ENABLED=${ARCHIVE_QUEUE_ENABLED:-true}
+      # The stack's defaults, as ememory-api states them.
+      - CRON_ENABLED=${CRON_ENABLED:-true}
+      - ARCHIVE_ENABLED=${ARCHIVE_ENABLED:-true}
+      - ARCHIVE_ENDPOINT_URL=${ARCHIVE_ENDPOINT_URL:-http://archive-store:8333}
+      - ARCHIVE_REGION=${ARCHIVE_REGION:-us-east-1}
+      - ARCHIVE_BUCKET=${ARCHIVE_BUCKET:-ememory-archive}
       - INGEST_WORKER_MAX_JOBS=${INGEST_WORKER_MAX_JOBS:-5}
       - RUN_MIGRATIONS=false
     volumes:
@@ -613,7 +645,7 @@ services:
   #their code stays in plugins/ as a menu option, run by adding
   # their services in an overlay of your own.
   chrono-engine:
-    image: ghcr.io/everythingmemory/chrono-engine:1.2.14@sha256:43123fa963dcfac332e840f9745d0d6fa8c6112029f3968d32f2a6bdfef92275
+    image: ghcr.io/everythingmemory/chrono-engine:1.2.15@sha256:302ab11212edee8770f224efa88d63f0a793622bfdcc5ad98d96cee1e591d5f4
     restart: unless-stopped
     # A ceiling: a runaway kills this container and not a neighbour, and the
     # restart policy brings it back. Not yet measured.
@@ -632,7 +664,7 @@ services:
       start_period: 5s
 
   plugin-chrono:
-    image: ghcr.io/everythingmemory/plugin-chrono:1.2.14@sha256:c3bd9e73863c3ce9d116816874201d3e9fbafa7feacf73add0324ccf8511c641
+    image: ghcr.io/everythingmemory/plugin-chrono:1.2.15@sha256:b69e063731b362bf09d5a4caa510ba0dc1ca27f3e2a7b0f0d7a33e477dca44a5
     restart: unless-stopped
     # Not yet measured.
     mem_limit: 128m
@@ -655,7 +687,7 @@ services:
     command: ["uvicorn", "chrono_plugin.app:app", "--host", "0.0.0.0", "--port", "8000"]
 
   plugin-wordnet:
-    image: ghcr.io/everythingmemory/plugin-wordnet:1.2.14@sha256:6be2e59ecb188240597b87bac88be21e109352a297d64685cfe35c61fac59a56
+    image: ghcr.io/everythingmemory/plugin-wordnet:1.2.15@sha256:256a4419bc7dad072cbddd034c2058d3a6afe35127e68a8035ba4e17af9535ef
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
     # the archive (47,934 records, 2026-10-14). A runaway is killed and

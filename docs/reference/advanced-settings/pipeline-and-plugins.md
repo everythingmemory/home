@@ -45,16 +45,26 @@ plugins:
 
 | Field | Meaning |
 |---|---|
-| `type` | `extract`, `embed` or `tokenize`. Any other value stops the engine when it reads the file |
+| `type` | `extract`: a profile can run it at ingest, and what it returns is kept as the record's tags. `embed`: it serves vectors. `tokenize`: never run at ingest; the engine calls it by name, at question time only. Any other value stops the engine when it reads the file |
 | `url`, `health_url` | The plugin's two routes |
 | `timeout` | Seconds before a call is abandoned |
 | `retries` | How many times a timeout or a 5xx reply is retried |
 | `optional` | `true`: if the plugin still does not answer, the pipeline carries on without it, and the scheduled job derives the record's tags later. `false`: the components after it do not run for that record |
-| `json_input` | For JSON content: `raw` (the text as stored, the default) or `leaves` (the leaf values) |
+| `json_input` | For JSON content: `raw` (the text as stored, the default) or `leaves` (the leaf values, a blank line between each) |
+| `raw_input` | `true`: the plugin is sent the content exactly as stored, without the edge-property values after it — for a plugin that parses a strict format, such as JSON. Not with `json_input: leaves`; the engine refuses the pair at start |
 
 A 4xx reply is not retried and fails the background job for that record, whatever `optional` says; the steps after it, embedding included, do not run.
 
 Registered is not running. Each `extract` entry becomes a component named `plugin_<name>` that a pipeline profile can list, and it is called only when a profile lists it, or when a retrieval component names it: `e_timeline` reads a question's dates through `chrono` under `timeline_v1`, and `e_gather` lemmatizes a question through `wordnet`. The file also registers `duckling` and `json_leaf`, whose services the shipped stack does not run; only the older profiles that name them call them.
+
+- `wordnet` stays registered whatever the profile: `e_gather` `find` lemmatizes the question through it, and full-text search runs on those words.
+- `chrono` reads JSON content raw: on leaves joined by blank lines one match could run across two values.
+- `duckling` reads JSON as leaves (on raw JSON it reads every quoted number as a duration), and is not retried: a long record is slow, and a retry repeats the same work.
+- `json_leaf` is sent the content raw (`raw_input: true`): the edge-property values after it would break its JSON parse.
+- `conf/ep_versions.yaml` gives each extractor a `version`, a `schema_id` (the name its output is kept under) and `is_visible`.
+- An extractor's `version`, with the others the pipeline profile runs, makes up the tag version; raise it when the extractor's output changes, and the tagging sweep derives every record's tags again.
+- A `plugin_<name>` entry's output is tags, never listed to agents whatever `is_visible` says; `agent_property` and `connection` (the edges of `connect` and `group`) are what an agent asserted, and are visible.
+- Every `extract` plugin in `conf/plugins.yaml` needs an entry in `conf/ep_versions.yaml`.
 
 ## Example
 ```text

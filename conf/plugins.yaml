@@ -1,40 +1,9 @@
-# Plugin registry — declares external extraction and embedding services.
-#
-# Each plugin runs in its own Docker container with isolated dependencies.
-# The pipeline calls plugins over HTTP alongside in-process extractors.
-#
-# Contract: GET /health + POST /invoke. Dict in, dict out.
-# See each plugin's README for request/response examples.
-#
-# Fields:
-#   type        — one of "extract", "embed", "tokenize":
-#                   extract  — the ingest sweep runs it on every record and
-#                              persists what it returns as property_cache
-#                   embed    — it serves vectors
-#                   tokenize — registered but OFF the ingest sweep; the engine
-#                              invokes it by name at query time only
-#                 An unrecognised value raises at startup — a typo must not
-#                 silently drop a plugin off the sweep.
-#   url         — POST /invoke endpoint
-#   health_url  — GET /health endpoint
-#   timeout     — request timeout in seconds
-#   retries     — retry count on timeout/5xx (0 = no retries)
-#   optional    — if true, pipeline continues when plugin is unavailable
-#   json_input  — what the plugin is sent when the content is a JSON object or
-#                 array: "raw" (default, the text as stored) or "leaves" (the
-#                 leaf values, a blank line between). Not with raw_input: true.
-
-# REGISTERED IS NOT RUNNING. An `extract` entry is called only by a profile
-# that names its `plugin_<name>` component, so an entry whose service the
-# compose does not carry costs nothing until a profile selects it. The shipped
-# compose runs wordnet and chrono; `json_leaf` and `duckling` stay registered as
-# menu options — kept here because ep_versions.yaml must name
-# the same extractors, and that file classifies rows already stored by them.
-# Selecting a profile that names one means adding its service in an overlay.
+# The plugin registry: the extractor services the pipeline can call.
+# Details: https://everythingmemory.ai/docs/reference/advanced-settings/pipeline-and-plugins/
 
 plugins:
 
-  # NOT IN THE SHIPPED COMPOSE; named by no shipped profile.
+  # Not in the shipped stack.
   json_leaf:
     type: extract
     url: http://plugin-json-leaf:8000/invoke
@@ -42,28 +11,9 @@ plugins:
     timeout: 5
     retries: 1
     optional: true
-    # Plugin parses content as strict JSON. The engine MUST NOT append the
-    # agent-property suffix (used to feed declared values to WordNet/duckling)
-    # because that breaks JSON parsing and yields 0 EPs.
     raw_input: true
 
-  # STILL LOADED, deliberately: the engine looks this entry up BY NAME at query
-  # time (tokenize_query, gather_resolve) to lemmatise the query into
-  # query_rvalues for property_retrieve and query_name_tokens — the only input
-  # tsquery_retrieve searches on. Removing the entry would return None there and
-  # take full-text search down with it, so the entry stays and only its `type`
-  # moves off the sweep.
-  #
-  # `extract` — on the ingest sweep, and it earns its volume. The per-word rows
-  # are 84-89% of all stored properties, and removing them costs 8.9 points of
-  # answer recall: two stacks on the same nineteen packs and the same 2,731
-  # questions, held at exact corpus parity and differing only in this line,
-  # answered 65.3% with the rows and 56.4% without, through the same unmodified
-  # profile. They almost never find an answer nothing else holds —
-  # the property pool was the sole supplier 3 times in 775 — so their value is
-  # in COMPOSING the page, which is why measuring unique contribution alone
-  # understated them. `tokenize` keeps the query-side lookup and takes the rows
-  # away; it was measured and reverted.
+  # Also read at question time by e_gather find, whatever the profile.
   wordnet:
     type: extract
     url: http://plugin-wordnet:8000/invoke
@@ -72,28 +22,17 @@ plugins:
     retries: 1
     optional: true
 
-  # NOT IN THE SHIPPED COMPOSE; named by the `temporal`
-  # profile's question parse.
+  # Not in the shipped stack; the temporal profile reads questions with it.
   duckling:
     type: extract
     url: http://plugin-duckling:8000/invoke
     health_url: http://plugin-duckling:8000/health
-    # The plugin parses a record in bounded pieces, one after another, so a
-    # long record is slow without anything being wrong (578 kB: 32 s). No
-    # retry: it would repeat the same work on an engine still busy with it.
     timeout: 60
     retries: 0
     optional: true
-    # Raw JSON reads every quoted number ("16") as a duration of N seconds.
     json_input: leaves
 
-  # The time dimension through chrono-node; no durations, no period codes, no
-  # seasons. It reads a JSON record RAW (no `json_input`): on raw JSON chrono
-  # finds what it finds leaf by leaf, while leaves joined by blank lines let
-  # one match run across two.
-  # THE SHIPPED TIME READER: called by retrieval_v1 at ingest
-  # and by `temporal_parse_v2` (TEMPORAL_PROFILE=timeline_v1) for the question.
-  # The compose starts its pair (chrono-engine, plugin-chrono) with the stack.
+  # The shipped time reader (retrieval_v1 and timeline_v1).
   chrono:
     type: extract
     url: http://plugin-chrono:8000/invoke

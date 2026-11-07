@@ -1,6 +1,6 @@
 -- Transparent data encryption, switched on at database creation.
 --
--- Runs ONCE, on an empty data directory, before init-pgvector.sql. It needs
+-- Runs ONCE, on an empty data directory, before 10-init-pgvector.sql. It needs
 -- `shared_preload_libraries=pg_tde`, which docker-compose.yml passes on the
 -- postgres command line, and a writable /tde_keys (the key volume).
 --

@@ -1,68 +1,30 @@
-# EP Extraction Component Versions
-#
-# Each entry declares the current version of an EP extraction component, and
-# the schema_id and agent visibility of what it produces.
-#
-# The version is part of `tag_cache.derived_version`, so bumping one is how a
-# fleet re-derives its tag index: the tagging sweep's census reads every
-# record as behind and the derive brings it up, one record at a time under the
-# sweep's own budget. Nothing else reads the number.
-#
-# A `plugin_*` ENTRY'S SCHEMA IS DERIVED. The `plugin_` prefix is
-# already the name of a plugin everywhere else — `profiles.yaml`'s
-# component lists, the pipeline registry's component names, `plugins.yaml`'s
-# entries under it — and a plugin is a thing that reads content and
-# answers. So its schema's rows are an INDEX this engine rebuilds from content:
-# off the peer wire, out of the archive and out of the agent's enumerable
-# catalog. Every other entry here (`agent_property`,
-# `connection`) is a DECLARATION — something an agent or the engine asserted,
-# with an origin and an id.
-#
-# A SCHEMA IS DERIVED BY WHAT PRODUCED IT, not by which profile runs that
-# producer and not by what type the registry lists it as. Both of those were
-# tried and both reclassify rows already written by a one-word edit elsewhere:
-#   * the PROFILE took `plugin_json_leaf` off the shipped profile and
-#     6,978 stored rows were filed as declarations by that act alone;
-#   * the PLUGIN'S TYPE — `plugins.yaml` documents flipping wordnet
-#     `type: extract` -> `tokenize` as a measured, reverted experiment,
-#     and that one word covers 84-89% of every stored property row.
-# Changing what is derived NEXT is a profile or plugin edit; what stored rows
-# ARE does not move. A guard test fails CI when a `type: extract` plugin has no
-# entry here at all, which is the mistake that actually happens.
-#
-# Bump a version when:
-#   - The extraction logic changes (new fields, better parsing)
-#   - The underlying model changes (e.g., GLiNER upgrade)
-#   - New metadata fields are added to the promotion list
-
+# The version, schema and agent visibility of each extractor's output.
+# Details: https://everythingmemory.ai/docs/reference/advanced-settings/pipeline-and-plugins/
 
 plugin_wordnet:
   version: 1
-  is_visible: false       # too noisy for agents
+  is_visible: false
   schema_id: wordnet
 
 plugin_duckling:
-  version: 2       # JSON records read as leaf values (plugins.yaml json_input)
-  is_visible: false       # too noisy for agents
+  version: 2
+  is_visible: false
   schema_id: duckling
 
 plugin_chrono:
   version: 1
-  is_visible: false       # as duckling's: too noisy for agents
+  is_visible: false
   schema_id: chrono
 
 plugin_json_leaf:
   version: 1
-  is_visible: true        # structured JSON leaves — agent-visible
+  is_visible: true
   schema_id: json_leaf
 
 agent_property:
-  is_visible: true        # canonical agent surface — always visible (hardcoded safety net too)
+  is_visible: true
 
 connection:
   version: 1
-  is_visible: true        # asserted structure (e_connect / e_group) — a view
-                          # cannot draw a graph it cannot discover or match on.
-                          # This is the deliberate divergence from `adjustment`,
-                          # whose token is noise and stays hidden.
+  is_visible: true
   schema_id: connection

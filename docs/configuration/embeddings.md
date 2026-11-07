@@ -12,3 +12,12 @@ The embedding model the engine searches by meaning with, and the model gateway t
 | `WINDOW_EMBED_SIZE` | `5` | — | How many records a window vector covers |
 
 The gateway is [LiteLLM](https://docs.litellm.ai/). Its routes are in `conf/gateway.yaml`: each names a model, where it is served, and its vector width (`output_vector_size`), which the engine requires.
+
+- The engine embeds through the `conf/gateway.yaml` entry whose `model_name` is `EMBEDDING_MODEL`.
+- `model_info.output_vector_size` is required: without it the engine embeds nothing on that route.
+- `model_info.document_prefix` and `query_prefix` are optional task prefixes, added before every record and every question; they are part of the [embedding space](../architecture/embedding-spaces.md).
+- `nomic-embed-text` (the default) is served by the stack's `local-embed` service: 768 wide, prefixed, no key, nothing leaves the machine.
+- `text-embedding-3-small` goes through OpenRouter: 1536 wide, no prefixes; set `OPENROUTER_API_KEY` in `gateway.env` (from `gateway.env.template`) and `EMBEDDING_MODEL=text-embedding-3-small` in `.env`.
+- A key is named in the file as `os.environ/NAME` and set in `gateway.env`, never in the file.
+- `litellm_settings`: two retries (`num_retries`), a 120-second timeout (`request_timeout`), and parameters a provider does not accept dropped (`drop_params`).
+- The gateway reads the file at start: restart the `gateway` service after a change.

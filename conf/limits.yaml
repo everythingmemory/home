@@ -1,36 +1,7 @@
-# Request limits. One file, one name per limit, shadowable from
-# CONF_OVERRIDE_DIR like plugins.yaml and profiles.yaml.
+# Request limits and batch sizes.
+# Details: https://everythingmemory.ai/docs/configuration/workers/
 
-# The largest page_size a caller may request of a paging tool (e_property,
-# e_gather, e_timeline, e_correct, e_audit). A SANITY BOUND against a
-# pathological request, nothing more: out of range is REFUSED, never clamped,
-# because a page that is not what was asked for and says so nowhere is a lie to
-# the caller. How many records to spend context on is the CALLER's budget.
-#
-# The real ceiling is the merged candidate list, which slice_page already
-# enforces. This number sits an order of magnitude above any list the pipeline
-# can produce, so it can never refuse a legitimately deep profile — 1,000 was
-# too low: a window fetch of 400 expanded x4 already exceeds it.
 page_size_ceiling: 10000
-
-# How many records ONE `task_derive_tags` job derives. The tagging sweep queues
-# every record with no current tag row, cut into jobs of this size, on the
-# maintenance queue; a job derives its records in turn and commits each one. Larger batches
-# are fewer jobs and a longer wait behind a slow plugin — the maintenance worker's
-# job timeout (`core.worker.MAINTENANCE_JOB_TIMEOUT`) has to cover one batch. At least 1.
-# 20, not 50: dense records take Duckling seconds each (corpus1 cyber JSON,
-# 2026-10-16: up to 32 s), and two 50-record jobs ran past the 300 s timeout.
-# Over the 1,267 slowest records, the slowest of 20 is 72 s at p99 on a laptop.
 tag_derive_batch: 20
-
-# How many records ONE `task_embed_batch` job embeds. The embedding
-# sweep queues every record missing a vector, cut into jobs of this size, on the
-# maintenance queue; a job embeds its records in turn — one provider call each —
-# and the maintenance worker's job timeout
-# (`core.worker.MAINTENANCE_JOB_TIMEOUT`) has to cover one batch. At least 1.
 embed_batch: 50
-
-# The most window anchors ONE embedding sweep pass queues for repair. They are
-# leftovers — whatever lands a vector queues its own window — so the repair is
-# small and hourly. At least 1.
 embed_repair_limit: 500

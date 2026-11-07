@@ -56,7 +56,7 @@ Proven on 2026-10-30 on a fresh Docker engine with no route out, on both the cla
 `scripts/offline_proof.sh` in the core repository runs the whole proof on one connected machine: it builds and pulls, then starts the stack on a Docker network with no route out, checks that no container can reach the internet, stores three records and finds one by meaning, checks the archive holds them encrypted, deletes the database volume and checks the records and their vectors come back from the archive. By hand, on a host with no route out:
 
 1. `curl -s http://localhost:8765/health` reports `healthy`, with `embedding.state` `ok`.
-2. Store a record and find it by meaning (quickstart steps 8 and 9). A similarity result proves the local model answered.
+2. Store a record and find it by meaning (quickstart steps 10 and 11). A similarity result proves the local model answered.
 3. `docker compose logs gateway local-embed` shows no failed outbound connection.
 
 ## Exchanging with other sites

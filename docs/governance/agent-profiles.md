@@ -21,6 +21,10 @@ In a policy, the grants and the home lane name lanes as written in the document 
 
 A new engine has two agent profiles: `open` reads and writes every lane; `restricted` reads every lane and writes only `default`. A call that names no agent profile runs as the engine's default, `restricted` as shipped, and is refused if no default is set. `e_system` always requires one.
 
+- A new engine's first policy, and its default, come from `conf/agents.yaml`, read on the first start of an engine that holds no policy.
+- After that, policies change lanes and profiles, and `PUT /api/v2/agent-profiles/default` changes the default; a policy cannot set it.
+- A member marked `builtin: true` is the floor: added back on every start if no policy declares it. The shipped floor is the lane `default` and the profile `restricted`; `open` is not in it.
+
 ## Naming the agent profile
 
 The agent profile is given to the agent by the deployment — in its system prompt or a skill — and the agent passes it as `agent_profile` on each call. `e_system` `get_profile` returns the agent profile's writable lanes, their source types and the labels each allows.

@@ -19,11 +19,13 @@ The console ships with every stack and runs beside the engine. It shows one engi
 
 A policy's YAML can be downloaded from the control plane.
 
+The console also carries this documentation, for its release, at `/manual/` (`http://localhost:8766/manual/`), with no sign-in.
+
 ## Signing in
 
-Open the console in a browser on the machine the stack runs on; the [quickstart](quickstart.md) gives its address. With authentication on, sign in with a client key — the same kind of `emem_…` key an agent uses.
+Open the console in a browser on the machine the stack runs on, at `http://localhost:8766/` (the port is `CONSOLE_PORT`; see the [quickstart](quickstart.md)). With authentication on, sign in with a client key — the same kind of `emem_…` key an agent uses.
 
-- **Create a key just for people,** rather than reusing an agent's: `./e.sh client-key create --label console`. Deleting its entry from `conf/keys.yaml` later ends the console's access without touching any agent, and the audit log shows the console's activity under that key's label.
+- **Create a key just for people,** rather than reusing an agent's: `./e.sh client-key create --label console`. **Give it no scope** — no `--profiles`, `--policies` or `--operations`: the console reads every lane, every policy and every peer, and the audit log, through operator routes a scoped key may not use. Deleting its entry from `conf/keys.yaml` later ends the console's access without touching any agent, and the audit log shows the console's activity under that key's label.
 - **The key never stays in the browser.** The console's own server checks it with the engine once, then holds it; the browser keeps only a session cookie that scripts on the page cannot read.
 - The console reads through the `restricted` agent profile, which every engine carries and which may read every lane.
-- **A session lasts.** It ends after 30 days, or when you sign out — not when you step away. Set `CONSOLE_SESSION_MAX` (and, if you want one, an idle limit with `CONSOLE_SESSION_IDLE`) in `.env` to change that; `0` means no limit. Restarting the console signs everyone out, because it never writes a key to disk.
+- **A session lasts.** It ends after 30 days, or when you sign out — not when you step away. Set `CONSOLE_SESSION_MAX` (shipped `30d`) and `CONSOLE_SESSION_IDLE` (shipped `0`, no idle limit) in `.env`: a whole number with `m`, `h` or `d`, at most 400 days, or `0` for no limit; any other value stops the console at start. Restarting the console signs everyone out, because it never writes a key to disk.

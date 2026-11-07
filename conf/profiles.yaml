@@ -1,46 +1,14 @@
-# Pipeline profiles — configure component sequences per processing path.
-#
-# Each profile defines one or more pipeline paths (curate, ingestion, gather, etc.).
-# Within each path, 'components' lists the execution order:
-#   - curate: retrievers run first (concurrently), then transforms sequentially
-#   - ingestion: all components run sequentially, with abort-on-validation-failure
-#   - gather: resolver → ordering → slice → load → format
-#
-# Per-component config can be added as top-level keys matching the component name.
-#
-# THE SHIPPED READERS OF A DERIVED PROPERTY READ `tag_cache`. A property
-# a plugin extracted from content is an INDEX, not a declaration: it has no
-# origin but the content and the plugin version, no id, it crosses nothing and
-# it is never archived. So the pool, the three temporal readers and the loader
-# named below are the tag-side components, and `property_cache` is read for
-# what an agent DECLARED. Every row-side sibling stays registered and selectable
-# — the pipeline is a menu — and `conf/profiles.tuning.yaml` holds each of these
-# profiles with the row-side names substituted back, as the control arm.
-#
-# ONLY VETTED PROFILES SHIP: this file is `default`, `retrieval_v1`,
-# `gather`, `temporal` and `timeline_v1`. The measurement profiles
-# (agentic_eval_v1/_v2 and the control arms) are in conf/profiles.tuning.yaml,
-# which stays in core and is in no release.
-#
-# Test-only profiles injected via tests/conftest.py.
+# The pipeline profiles: the component lists PIPELINE_PROFILE and TEMPORAL_PROFILE select.
+# Details: https://everythingmemory.ai/docs/reference/advanced-settings/profiles/
 
-# --- Sentinel ---
-
+# A placeholder that runs nothing.
 default:
   curate_original:
     components: [not-configured]
   ingestion:
     components: [not-configured]
 
-# --- retrieval_v1 — the shipped curate profile, with time read by chrono ---
-#
-# The measured `agentic_eval_v2` (conf/profiles.tuning.yaml) verbatim except
-# `plugin_chrono` in `plugin_duckling`'s place on the ingest list (pinned by
-# tests/unit/pipeline/test_profile_retrieval_v1.py). A
-# stack selects it with PIPELINE_PROFILE — the profile is what decides which
-# extract plugins run — and TEMPORAL_PROFILE=timeline_v1 for the question
-# side. Needs the `chrono` entry in the plugins.yaml the stack runs. Selecting it
-# changes the stack's derived_version, so the census re-derives its corpus once.
+# The default PIPELINE_PROFILE: ingest and e_gather find.
 retrieval_v1:
   curate:
     components: [tokenize_query, tag_property_retrieve, tsquery_retrieve, semantic,
@@ -48,10 +16,6 @@ retrieval_v1:
                  slice_page, load_srs, format_output]
   ingestion:
     components: [validate, persist, agent_properties, plugin_wordnet, plugin_chrono, embed, archive]
-    # source_type allowlist — agents must use one of these unless the
-    # profile sets allow_any_source_type: true. Customers extend by adding
-    # their own vocabulary (CRM, Slack, SAP, etc.).
-    # allowed_source_types: [conversational, documentary]
     allow_any_source_type: true
   tag_property_retrieve:
     max_candidates: 200
@@ -71,35 +35,14 @@ retrieval_v1:
   format_output:
     attribution_detail: 5
 
-# --- Gather profile (e_gather tool) ---
-#
-# `load_srs`, NOT the tag-side loader. `load_srs_with_tags` exists to carry
-# `tag_cache.temporal` into `ctx.extra["temporal_map"]`, and the ONE component
-# that reads that map is `tag_temporal_order` — which this pipeline does not
-# run. Ordering here is `order_using_context`, on embeddings, before the loader.
-# A loader that fetched the ranges would spend a query per page on a map nothing
-# downstream opens.
-
+# The structural actions of e_gather.
 gather:
   gather:
     components: [gather_resolve, order_using_context, slice_page, load_srs, format_output]
   slice_page:
     page_size: 50
 
-# --- Temporal profile (e_timeline tool) ---
-#
-# Two pipelines:
-#   temporal      — list / intersect / walk: filter via tag_temporal_resolve, then time-order
-#   temporal_find — find: semantic retrieval (curate components), then time-order
-#
-# Both end with: load_srs_with_tags → tag_temporal_order → slice_page → format_output
-# (load before order so the sort has sr_map/ep_map and the records' ranges; slice
-#  after so we paginate the time-ordered set, not a relevance-truncated subset.)
-#
-# What a STORED match spans: a day-grain match spans its day and a month-grain
-# match spans its own calendar month, both off the GiST index. `match=` is
-# matched against the exact element.
-
+# e_timeline, with the question's dates read by Duckling.
 temporal: &temporal
   temporal:
     components: [temporal_parse, tag_temporal_resolve, tag_temporal_shed,
@@ -131,11 +74,7 @@ temporal: &temporal
   format_output:
     attribution_detail: 5
 
-# `timeline_v1` — the same profile with the QUESTION read by `temporal_parse_v2`
-# (the chrono plugin) instead of `temporal_parse` (duckling). Everything else
-# is `temporal`'s, by the merge: `temporal_find` parses no question, and every
-# component's settings are inherited. Selected by TEMPORAL_PROFILE=timeline_v1;
-# needs the `chrono` entry in plugins.yaml, or a question yields no bounds.
+# The default TEMPORAL_PROFILE: temporal, with the question's dates read by chrono.
 timeline_v1:
   <<: *temporal
   temporal:
