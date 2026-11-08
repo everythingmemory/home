@@ -28,7 +28,7 @@ services:
   folder-intake:
     # Published to GHCR and pinned by scripts/pin-images.sh at a release;
     # building it here instead is docker-compose.folder.build.yml.
-    image: ghcr.io/everythingmemory/folder-intake:1.2.18@sha256:11289f0c338bf884dbd8f47dab66578e7182b0a5d5430a45845adfe2c568b300
+    image: ghcr.io/everythingmemory/folder-intake:1.2.19@sha256:b2ca860a0b741b6e1f804e94348c15df6313c80f7e7dc70ff852ab063e789835
     restart: unless-stopped
     mem_limit: 512m
     logging:

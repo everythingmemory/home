@@ -158,5 +158,5 @@ From nothing to an agent storing and finding a record, on one machine, in eleven
 - What an agent does from here: [a walkthrough](../agents-how-to/walkthrough.md).
 - Running it beyond a first try: [single stack](single-stack.md).
 - Every setting: [configuration options](../configuration/index.md).
-- Backing up or moving a memory to another machine: [bundles](../governance/engine-identity-and-bundles.md).
+- Moving an engine to another machine: its archive and `ARCHIVE_KEY` ([archive and restore](../durability/archive-and-restore.md)). Bringing a memory into another engine: [bundles](../governance/engine-identity-and-bundles.md).
 - The source code is available on request, under the Business Source License 1.1: [licence](../reference/licence.md).

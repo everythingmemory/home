@@ -53,11 +53,12 @@
 #                                     HERE (prompted, or $EMEMORY_BUNDLE_PASSPHRASE) — the passphrase
 #                                     never reaches the engine. Needs python3 with the bundle package
 #                                     (pip install -e bundle/) — set EMEMORY_PYTHON to its venv
-#   import  FILE [--take-over | --merge]
-#                                     import a bundle (decrypted here when it is age ciphertext).
-#                                     Your own bundle imports as is; another engine's needs
-#                                     --take-over (an empty engine becomes it) or --merge (added
-#                                     as another engine's, without its deletions)
+#   import  FILE [--include-deleted] [--rename-profile [POLICY/]OLD=NEW]...
+#                                     import a bundle (decrypted here when it is age ciphertext)
+#                                     as THIS engine's own: every id rehomed, so the same bundle
+#                                     again adds nothing. Deleted records are left out unless
+#                                     --include-deleted; a clashing profile name is refused —
+#                                     --rename-profile gives it a new one (asked for in a terminal)
 #   ingest  DIR --agent-profile NAME [--lane L] [--property k:v]... [--glob PATTERN]
 #               [--prune] [--watch] [--dry-run] [--max-size B] [--sync]
 #                                     FOLDER INTAKE: every document under DIR becomes memory,

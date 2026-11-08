@@ -47,7 +47,7 @@ Two things, kept apart from each other:
 
 The database needs no backup of its own: it is rebuilt from the archive, with new encryption keys of its own.
 
-To keep a copy of a memory somewhere the engine cannot reach, or to move it to another engine, export a bundle: see [engine identity, bundles and take-over](../governance/engine-identity-and-bundles.md).
+To move an engine to new hardware, give a fresh stack the same archive and `ARCHIVE_KEY`: it starts as the same engine. To keep a copy of a memory somewhere the engine cannot reach, or to bring it into another engine, export a bundle: see [engine identity and bundles](../governance/engine-identity-and-bundles.md).
 
 ## What the archive holds
 

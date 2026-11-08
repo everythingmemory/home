@@ -26,7 +26,7 @@ flowchart TB
 
 **Source types.** Declared on a lane, a source type types a record and constrains its edge-property labels, label values and content shape, and sets its authority. A lane with source types accepts only those. See [source types](source-types.md).
 
-**Engine identity, bundles and take-over.** Every engine has an identity that every write carries. A memory moves between engines as a bundle: imported as is, merged beside another engine's memory, or taken over by a new engine. See [engine identity, bundles and take-over](engine-identity-and-bundles.md).
+**Engine identity and bundles.** Every engine has an identity that every write carries, and an engine moves with its archive. A memory is brought into another engine as a bundle, which that engine takes in as its own. See [engine identity and bundles](engine-identity-and-bundles.md).
 
 **The deletion switch.** Whether records may be deleted at all is the engine owner's choice, made once, in one setting. See [the deletion switch](deletion-switch.md).
 
