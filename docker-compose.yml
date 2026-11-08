@@ -38,7 +38,7 @@
 
 services:
   ememory-api:
-    image: ghcr.io/everythingmemory/core:1.2.19@sha256:1c7dce71ae6c3f55ccfcfe8c8c61f1fca8037d37a0b1ad8158d37ce78572b3fb
+    image: ghcr.io/everythingmemory/core:1.2.22@sha256:61f44f00d2bd67da4f832e51df8ecb9774c13e74a41dc08484dcbc7e4c9858d1
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
     # the archive (47,934 records, 2026-10-14). A runaway is killed and
@@ -75,13 +75,16 @@ services:
       # workers — this stack defines the second worker, so it is on here.
       - ARCHIVE_QUEUE_ENABLED=${ARCHIVE_QUEUE_ENABLED:-true}
       # THE STACK'S DEFAULTS: the engine's own are off and blank, so the
-      # shipped stack states its own here — the schedule and the archive on, in
-      # the bundled store (archive-store). A line in .env overrides each.
+      # shipped stack states its own here — the schedule on. A line in .env
+      # overrides it. THE ARCHIVE is stated in .env, never defaulted,
+      # by ARCHIVE_MODE alone: local, the folder mounted at /archive below; s3,
+      # the bucket ARCHIVE_BUCKET with ARCHIVE_ENDPOINT_URL and its keys from
+      # .env; disabled, none. The engine refuses a mode its settings contradict.
       - CRON_ENABLED=${CRON_ENABLED:-true}
-      - ARCHIVE_ENABLED=${ARCHIVE_ENABLED:-true}
-      - ARCHIVE_ENDPOINT_URL=${ARCHIVE_ENDPOINT_URL:-http://archive-store:8333}
+      - ARCHIVE_MODE=${ARCHIVE_MODE:?ARCHIVE_MODE is required - local (the archive folder), s3 (an S3 bucket) or disabled; set it in .env}
       - ARCHIVE_REGION=${ARCHIVE_REGION:-us-east-1}
-      - ARCHIVE_BUCKET=${ARCHIVE_BUCKET:-ememory-archive}
+      # The host folder's path, read only by the start check (entrypoint).
+      - ARCHIVE_DIR=${ARCHIVE_DIR:?ARCHIVE_DIR is required - the host folder that holds the encrypted archive, an absolute path; create it and set it in .env (the quickstart, https://everythingmemory.ai/docs/operator-guide/quickstart/)}
     ports:
       # LOOPBACK ONLY: the template runs auth off for a first try,
       # so the port must not reach the network. docker-compose.open.yml is
@@ -93,21 +96,38 @@ services:
       # Configuration only — the code is in the image. A development stack can mount
       # the code too (docker-compose.estate.yml).
       - ./conf:/app/conf:ro
+      # THE ARCHIVE FOLDER — the host folder ARCHIVE_DIR,
+      # bind-mounted at /archive, where the engine writes one encrypted file per
+      # object. No `docker compose down -v` touches it; the customer backs it up
+      # and moves it with their own tools. It must exist (the install step makes
+      # it): a mistyped path is refused, never created empty.
+      - type: bind
+        source: "${ARCHIVE_DIR:?ARCHIVE_DIR is required - the host folder that holds the encrypted archive, an absolute path; create it and set it in .env (the quickstart, https://everythingmemory.ai/docs/operator-guide/quickstart/)}"
+        target: /archive
+        bind:
+          create_host_path: false
     depends_on:
       ememory-postgres:
         condition: service_healthy
       ememory-redis:
         condition: service_healthy
-      # The archive's bucket exists before the first write or restore sweep.
-      archive-bucket:
-        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8765/health')"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 15s
-    entrypoint: ["python", "-m", "uvicorn"]
+    # ARCHIVE_DIR IS CHECKED FIRST: an absolute path with no . or .. (compose
+    # would take a relative one from the project folder). A bad one stops the
+    # engine with this message, and the workers, which wait for a healthy
+    # engine, never start.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        case "$$ARCHIVE_DIR/" in [!/]*|*/./*|*/../*) echo "ARCHIVE_DIR must be an absolute path with no . or .. - set it in .env (the quickstart, https://everythingmemory.ai/docs/operator-guide/quickstart/)" >&2; exit 1 ;; esac &&
+        exec python -m uvicorn "$$@"
+      - ememory-api
     command: ["core.main:app", "--host", "0.0.0.0", "--port", "8765", "--timeout-graceful-shutdown", "5", "--log-config", "/app/conf/logging.yaml"]
 
   ememory-postgres:
@@ -188,92 +208,6 @@ services:
       retries: 5
       # The first start runs initdb and the TDE init before it can answer.
       start_period: 30s
-
-  # THE ARCHIVE STORE — named with a hyphen: the S3 client refuses an
-  # endpoint host with an underscore. The durable copy of everything the engine
-  # holds, on this machine's disk: SeaweedFS (master, volume, filer and the S3
-  # gateway in one process), reached by the engine on this stack's network at
-  # http://archive-store:8333 and published nowhere. Postgres is the live
-  # index, rebuildable from it. Pointing ARCHIVE_ENDPOINT_URL at Spaces, AWS or
-  # MinIO instead moves the archive there; this service then sits idle.
-  # It accepts exactly one identity, the ARCHIVE_ACCESS_KEY / ARCHIVE_SECRET_KEY pair in .env, written to a
-  # config file at start. Its objects are encrypted with ARCHIVE_KEY:
-  # keep that key APART from the archive (a password manager), never beside it.
-  archive-store:
-    # SeaweedFS 3.97, by tag and digest — the image the archive harness
-    # (docker-compose.peers.archive.yml) runs. Bump only in an upgrade cycle.
-    image: chrislusf/seaweedfs:3.97@sha256:bb05d66d2963b1cc48073190781c3dd29e2c4c88a2ae2986bf58e38c86d89c6e
-    restart: unless-stopped
-    # Not yet measured on a corpus.
-    mem_limit: 512m
-    logging:
-      driver: json-file
-      options:
-        max-size: "50m"
-        max-file: "3"
-    # Passed through as written; an empty one is refused below, at start.
-    environment:
-      - ARCHIVE_ACCESS_KEY=${ARCHIVE_ACCESS_KEY}
-      - ARCHIVE_SECRET_KEY=${ARCHIVE_SECRET_KEY}
-      - ARCHIVE_DIR=${ARCHIVE_DIR:?ARCHIVE_DIR is required - the host folder that holds the encrypted archive, an absolute path; create it and set it in .env (the quickstart, https://everythingmemory.ai/docs/operator-guide/quickstart/)}
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - >-
-        case "$$ARCHIVE_DIR/" in [!/]*|*/./*|*/../*) echo "ARCHIVE_DIR must be an absolute path with no . or .. - set it in .env (the quickstart, https://everythingmemory.ai/docs/operator-guide/quickstart/)" >&2; exit 1 ;; esac &&
-        : "$${ARCHIVE_ACCESS_KEY:?ARCHIVE_ACCESS_KEY is required - set it in .env}" &&
-        : "$${ARCHIVE_SECRET_KEY:?ARCHIVE_SECRET_KEY is required - set it in .env}" &&
-        printf '{"identities":[{"name":"ememory","credentials":[{"accessKey":"%s","secretKey":"%s"}],"actions":["Admin","Read","Write","List","Tagging"]}]}'
-        "$$ARCHIVE_ACCESS_KEY" "$$ARCHIVE_SECRET_KEY" > /tmp/s3.json &&
-        exec weed server -ip=archive-store -ip.bind=0.0.0.0 -dir=/data -master.volumeSizeLimitMB=64
-        -s3 -s3.port=8333 -s3.config=/tmp/s3.json
-    # THE ARCHIVE FOLDER — a host folder the customer names
-    # (ARCHIVE_DIR), bind-mounted: no `docker compose down -v` touches it, and
-    # the customer backs it up and moves it with their own tools, on any disk.
-    # SeaweedFS writes it as root (the image sets no user). It must exist (the
-    # install step makes it): a mistyped path is refused, never created empty.
-    volumes:
-      - type: bind
-        source: "${ARCHIVE_DIR:?ARCHIVE_DIR is required - the host folder that holds the encrypted archive, an absolute path; create it and set it in .env (the quickstart, https://everythingmemory.ai/docs/operator-guide/quickstart/)}"
-        target: /data
-        bind:
-          create_host_path: false
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://archive-store:8333/healthz"]
-      interval: 5s
-      timeout: 5s
-      retries: 30
-
-  # Makes the archive's bucket (ARCHIVE_BUCKET) if it is not there yet, then exits.
-  # The engine does not create buckets, and does not start until this has
-  # succeeded.
-  #
-  # THE ARCHIVE'S SECRETS ARE REQUIRED HERE, AT START. The store's key pair
-  # and ARCHIVE_KEY (every archive object is encrypted with it) must be
-  # set in .env: an empty one stops this service with a message naming
-  # it, and the engine never starts. Checked at start rather than by compose
-  # (`${VAR:?}`) because compose checks every service of every file, and the
-  # estate overlay — which turns the archive store off — must not need them.
-  # The key is only tested for presence here; nothing reads it.
-  archive-bucket:
-    image: chrislusf/seaweedfs:3.97@sha256:bb05d66d2963b1cc48073190781c3dd29e2c4c88a2ae2986bf58e38c86d89c6e
-    restart: "no"
-    environment:
-      - ARCHIVE_BUCKET=${ARCHIVE_BUCKET:-ememory-archive}
-      - ARCHIVE_ACCESS_KEY=${ARCHIVE_ACCESS_KEY}
-      - ARCHIVE_SECRET_KEY=${ARCHIVE_SECRET_KEY}
-      - ARCHIVE_KEY=${ARCHIVE_KEY}
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - >-
-        : "$${ARCHIVE_BUCKET:?ARCHIVE_BUCKET is required - set it in .env}" &&
-        : "$${ARCHIVE_ACCESS_KEY:?ARCHIVE_ACCESS_KEY is required - set it in .env}" &&
-        : "$${ARCHIVE_SECRET_KEY:?ARCHIVE_SECRET_KEY is required - set it in .env}" &&
-        : "$${ARCHIVE_KEY:?ARCHIVE_KEY is required - every archive object is encrypted with it; set it in .env}" &&
-        { echo "s3.bucket.create -name $$ARCHIVE_BUCKET" | weed shell -master=archive-store:9333 -filer=archive-store:8888 ; } &&
-        echo 'fs.ls /buckets' | weed shell -master=archive-store:9333 -filer=archive-store:8888 | grep -qw "$$ARCHIVE_BUCKET"
-    depends_on:
-      archive-store:
-        condition: service_healthy
 
   ememory-redis:
     # Pinned to the digest `redis:7-alpine` resolved to locally;
@@ -360,7 +294,7 @@ services:
   # conf/gateway.yaml routes EMBEDDING_MODEL=nomic-embed-text to it. It
   # publishes nothing; the gateway reaches it by service name.
   local-embed:
-    image: ghcr.io/everythingmemory/local-embed:1.2.19@sha256:7dec3adcdf7b3a4bd401177fd8d7c811ddc60a851aeb03900708415b8ec25bb5
+    image: ghcr.io/everythingmemory/local-embed:1.2.22@sha256:9ee9cee9e0f307bfd49af64c075014208dfaa07318739bf98dd98a92e4ec1c0e
     restart: unless-stopped
     # The model is 146 MB. Measured 2026-10-30: 81 MiB after the same burst
     # through the gateway. The ceiling is generous until measured on a corpus.
@@ -386,7 +320,7 @@ services:
   console:
     # Built in the console's own repository; pinned here with the rest by
     # scripts/pin-images.sh. Bump only in an upgrade cycle.
-    image: ghcr.io/everythingmemory/console:1.2.19@sha256:8124eea9772d7af66d7e252a4fcd11050c057801a6c0ef94f5ec1d6050ce99b5
+    image: ghcr.io/everythingmemory/console:1.2.22@sha256:5ee7846fbdf6d7caeb867f517528be4f7bf5c9d34390a17e713cd4f6cb974bb2
     restart: unless-stopped
     # Started after the engine's container exists, so the `ememory-api` name
     # resolves when the console first looks; the engine being ready is not
@@ -418,7 +352,7 @@ services:
     # no wget or curl for one written here to call.
 
   ememory-worker:
-    image: ghcr.io/everythingmemory/core:1.2.19@sha256:1c7dce71ae6c3f55ccfcfe8c8c61f1fca8037d37a0b1ad8158d37ce78572b3fb
+    image: ghcr.io/everythingmemory/core:1.2.22@sha256:61f44f00d2bd67da4f832e51df8ecb9774c13e74a41dc08484dcbc7e4c9858d1
     entrypoint: ["python", "-m", "arq", "core.worker.WorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
@@ -452,15 +386,19 @@ services:
       - ARCHIVE_QUEUE_ENABLED=${ARCHIVE_QUEUE_ENABLED:-true}
       # The stack's defaults, as ememory-api states them.
       - CRON_ENABLED=${CRON_ENABLED:-true}
-      - ARCHIVE_ENABLED=${ARCHIVE_ENABLED:-true}
-      - ARCHIVE_ENDPOINT_URL=${ARCHIVE_ENDPOINT_URL:-http://archive-store:8333}
+      - ARCHIVE_MODE=${ARCHIVE_MODE:?ARCHIVE_MODE is required - local (the archive folder), s3 (an S3 bucket) or disabled; set it in .env}
       - ARCHIVE_REGION=${ARCHIVE_REGION:-us-east-1}
-      - ARCHIVE_BUCKET=${ARCHIVE_BUCKET:-ememory-archive}
       - RUN_MIGRATIONS=false
     volumes:
       # Configuration only — the code is in the image. A development stack can mount
       # the code too (docker-compose.estate.yml).
       - ./conf:/app/conf:ro
+      # The archive folder, as ememory-api mounts it.
+      - type: bind
+        source: "${ARCHIVE_DIR:?ARCHIVE_DIR is required - the host folder that holds the encrypted archive, an absolute path; create it and set it in .env (the quickstart, https://everythingmemory.ai/docs/operator-guide/quickstart/)}"
+        target: /archive
+        bind:
+          create_host_path: false
     depends_on:
       ememory-api:
         condition: service_healthy
@@ -474,7 +412,7 @@ services:
   # hour. Same image, same mounts, same env as ememory-worker — only the arq
   # settings class and the concurrency differ.
   ememory-worker-archive:
-    image: ghcr.io/everythingmemory/core:1.2.19@sha256:1c7dce71ae6c3f55ccfcfe8c8c61f1fca8037d37a0b1ad8158d37ce78572b3fb
+    image: ghcr.io/everythingmemory/core:1.2.22@sha256:61f44f00d2bd67da4f832e51df8ecb9774c13e74a41dc08484dcbc7e4c9858d1
     entrypoint: ["python", "-m", "arq", "core.worker.ArchiveWorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
@@ -507,16 +445,20 @@ services:
       - ARCHIVE_QUEUE_ENABLED=${ARCHIVE_QUEUE_ENABLED:-true}
       # The stack's defaults, as ememory-api states them.
       - CRON_ENABLED=${CRON_ENABLED:-true}
-      - ARCHIVE_ENABLED=${ARCHIVE_ENABLED:-true}
-      - ARCHIVE_ENDPOINT_URL=${ARCHIVE_ENDPOINT_URL:-http://archive-store:8333}
+      - ARCHIVE_MODE=${ARCHIVE_MODE:?ARCHIVE_MODE is required - local (the archive folder), s3 (an S3 bucket) or disabled; set it in .env}
       - ARCHIVE_REGION=${ARCHIVE_REGION:-us-east-1}
-      - ARCHIVE_BUCKET=${ARCHIVE_BUCKET:-ememory-archive}
       - ARCHIVE_WORKER_MAX_JOBS=${ARCHIVE_WORKER_MAX_JOBS:-10}
       - RUN_MIGRATIONS=false
     volumes:
       # Configuration only — the code is in the image. A development stack can mount
       # the code too (docker-compose.estate.yml).
       - ./conf:/app/conf:ro
+      # The archive folder, as ememory-api mounts it.
+      - type: bind
+        source: "${ARCHIVE_DIR:?ARCHIVE_DIR is required - the host folder that holds the encrypted archive, an absolute path; create it and set it in .env (the quickstart, https://everythingmemory.ai/docs/operator-guide/quickstart/)}"
+        target: /archive
+        bind:
+          create_host_path: false
     depends_on:
       ememory-api:
         condition: service_healthy
@@ -532,7 +474,7 @@ services:
   # the other two. It is the ONLY worker that runs task_derive_tags, so the
   # tag index is not filled without it.
   ememory-worker-maintenance:
-    image: ghcr.io/everythingmemory/core:1.2.19@sha256:1c7dce71ae6c3f55ccfcfe8c8c61f1fca8037d37a0b1ad8158d37ce78572b3fb
+    image: ghcr.io/everythingmemory/core:1.2.22@sha256:61f44f00d2bd67da4f832e51df8ecb9774c13e74a41dc08484dcbc7e4c9858d1
     entrypoint: ["python", "-m", "arq", "core.worker.MaintenanceWorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
@@ -565,16 +507,20 @@ services:
       - ARCHIVE_QUEUE_ENABLED=${ARCHIVE_QUEUE_ENABLED:-true}
       # The stack's defaults, as ememory-api states them.
       - CRON_ENABLED=${CRON_ENABLED:-true}
-      - ARCHIVE_ENABLED=${ARCHIVE_ENABLED:-true}
-      - ARCHIVE_ENDPOINT_URL=${ARCHIVE_ENDPOINT_URL:-http://archive-store:8333}
+      - ARCHIVE_MODE=${ARCHIVE_MODE:?ARCHIVE_MODE is required - local (the archive folder), s3 (an S3 bucket) or disabled; set it in .env}
       - ARCHIVE_REGION=${ARCHIVE_REGION:-us-east-1}
-      - ARCHIVE_BUCKET=${ARCHIVE_BUCKET:-ememory-archive}
       - MAINTENANCE_WORKER_MAX_JOBS=${MAINTENANCE_WORKER_MAX_JOBS:-5}
       - RUN_MIGRATIONS=false
     volumes:
       # Configuration only — the code is in the image. A development stack can mount
       # the code too (docker-compose.estate.yml).
       - ./conf:/app/conf:ro
+      # The archive folder, as ememory-api mounts it.
+      - type: bind
+        source: "${ARCHIVE_DIR:?ARCHIVE_DIR is required - the host folder that holds the encrypted archive, an absolute path; create it and set it in .env (the quickstart, https://everythingmemory.ai/docs/operator-guide/quickstart/)}"
+        target: /archive
+        bind:
+          create_host_path: false
     depends_on:
       ememory-api:
         condition: service_healthy
@@ -588,7 +534,7 @@ services:
   # ememory-worker did. It is the ONLY worker that runs task_ingest, so an
   # asynchronous ingest is not extracted or embedded without it.
   ememory-worker-ingest:
-    image: ghcr.io/everythingmemory/core:1.2.19@sha256:1c7dce71ae6c3f55ccfcfe8c8c61f1fca8037d37a0b1ad8158d37ce78572b3fb
+    image: ghcr.io/everythingmemory/core:1.2.22@sha256:61f44f00d2bd67da4f832e51df8ecb9774c13e74a41dc08484dcbc7e4c9858d1
     entrypoint: ["python", "-m", "arq", "core.worker.IngestWorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
     restart: unless-stopped
     # Memory limit: ememory-worker's, which ran task_ingest until this worker
@@ -620,16 +566,20 @@ services:
       - ARCHIVE_QUEUE_ENABLED=${ARCHIVE_QUEUE_ENABLED:-true}
       # The stack's defaults, as ememory-api states them.
       - CRON_ENABLED=${CRON_ENABLED:-true}
-      - ARCHIVE_ENABLED=${ARCHIVE_ENABLED:-true}
-      - ARCHIVE_ENDPOINT_URL=${ARCHIVE_ENDPOINT_URL:-http://archive-store:8333}
+      - ARCHIVE_MODE=${ARCHIVE_MODE:?ARCHIVE_MODE is required - local (the archive folder), s3 (an S3 bucket) or disabled; set it in .env}
       - ARCHIVE_REGION=${ARCHIVE_REGION:-us-east-1}
-      - ARCHIVE_BUCKET=${ARCHIVE_BUCKET:-ememory-archive}
       - INGEST_WORKER_MAX_JOBS=${INGEST_WORKER_MAX_JOBS:-5}
       - RUN_MIGRATIONS=false
     volumes:
       # Configuration only — the code is in the image. A development stack can mount
       # the code too (docker-compose.estate.yml).
       - ./conf:/app/conf:ro
+      # The archive folder, as ememory-api mounts it.
+      - type: bind
+        source: "${ARCHIVE_DIR:?ARCHIVE_DIR is required - the host folder that holds the encrypted archive, an absolute path; create it and set it in .env (the quickstart, https://everythingmemory.ai/docs/operator-guide/quickstart/)}"
+        target: /archive
+        bind:
+          create_host_path: false
     depends_on:
       ememory-api:
         condition: service_healthy
@@ -645,7 +595,7 @@ services:
   #their code stays in plugins/ as a menu option, run by adding
   # their services in an overlay of your own.
   chrono-engine:
-    image: ghcr.io/everythingmemory/chrono-engine:1.2.19@sha256:07e43d6ece831588cac9dd1f840136830e741adafd6bb3efb06fab9d3467854b
+    image: ghcr.io/everythingmemory/chrono-engine:1.2.22@sha256:0e4e5ae3074316100990e0e1cbd29fc2dfa0da8b70044e408990fd81266fb9b0
     restart: unless-stopped
     # A ceiling: a runaway kills this container and not a neighbour, and the
     # restart policy brings it back. Not yet measured.
@@ -664,7 +614,7 @@ services:
       start_period: 5s
 
   plugin-chrono:
-    image: ghcr.io/everythingmemory/plugin-chrono:1.2.19@sha256:985b6a414133142d829819ea25b0e340610afa230b280f44ca5221cef0c44542
+    image: ghcr.io/everythingmemory/plugin-chrono:1.2.22@sha256:ec5577a8662f65a44e986996f39a642a38f3dd5c1a5b62be99825fc77ce37072
     restart: unless-stopped
     # Not yet measured.
     mem_limit: 128m
@@ -687,7 +637,7 @@ services:
     command: ["uvicorn", "chrono_plugin.app:app", "--host", "0.0.0.0", "--port", "8000"]
 
   plugin-wordnet:
-    image: ghcr.io/everythingmemory/plugin-wordnet:1.2.19@sha256:844ee78d225782e76d0e463befecbdf4badb3925d4f80d57d1b9a7a1bc1b6cfe
+    image: ghcr.io/everythingmemory/plugin-wordnet:1.2.22@sha256:89421e683816514c8c77a4e4b8afe574e8e0f9be53a454dcab88d1ec76433b7a
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
     # the archive (47,934 records, 2026-10-14). A runaway is killed and

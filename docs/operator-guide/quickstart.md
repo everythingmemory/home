@@ -51,7 +51,7 @@ From nothing to an agent storing and finding a record, on one machine, in eleven
 
    `docker compose version` must report 2.24.4 or later, and `hello-world` must print its greeting.
 
-2. **Get the stack files.** Download the latest release of [everythingmemory/home](https://github.com/everythingmemory/home/releases) and unpack it, or clone the repository, and run every step from its folder. It holds the compose files, the settings template `.env.example`, `conf/` and `e.sh`. Nothing is built: the compose file pulls the eMemory images from `ghcr.io/everythingmemory`, each pinned to the release by digest, and the third-party images (Postgres, the archive store, the job queue, the model gateway) from their own publishers, pinned the same way.
+2. **Get the stack files.** Download the latest release of [everythingmemory/home](https://github.com/everythingmemory/home/releases) and unpack it, or clone the repository, and run every step from its folder. It holds the compose files, the settings template `.env.example`, `conf/` and `e.sh`. Nothing is built: the compose file pulls the eMemory images from `ghcr.io/everythingmemory`, each pinned to the release by digest, and the third-party images (Postgres, the job queue, the model gateway) from their own publishers, pinned the same way.
 
 3. **Write the settings file.**
 
@@ -59,7 +59,7 @@ From nothing to an agent storing and finding a record, on one machine, in eleven
    ./e.sh init
    ```
 
-   This writes `.env`, the stack's one settings file, from `.env.example`, with every password and key generated (see [the settings it writes](#the-settings-init-writes)). It makes the archive folder, `$HOME/ememory-data/archive`, and names it as `ARCHIVE_DIR`; to put the archive elsewhere, pass `--archive-dir` with an absolute path. It also starts `conf/keys.yaml`, the client-key registry, with no keys yet. It never overwrites an existing `.env`.
+   This writes `.env`, the stack's one settings file, from `.env.example`, with its passwords and the archive key generated (see [the settings it writes](#the-settings-init-writes)). It makes the archive folder, `$HOME/ememory-data/archive`, and names it as `ARCHIVE_DIR`; to put the archive elsewhere, pass `--archive-dir` with an absolute path. It also starts `conf/keys.yaml`, the client-key registry, with no keys yet. It never overwrites an existing `.env`.
 
    The archive folder survives `docker compose down -v`, and you back it up and move it with your own tools. On macOS with Docker Desktop, keep it under your home folder, which Docker Desktop shares by default.
 
@@ -73,7 +73,7 @@ From nothing to an agent storing and finding a record, on one machine, in eleven
 
    The first start pulls the images, which takes a few minutes; later starts take seconds.
 
-   A required setting that is missing stops the start and is named. Most are named by `docker compose up` itself. The archive settings are checked when the stack starts: `up` reports that `archive-store` or `archive-bucket` did not start or complete, the engine does not start, and `docker compose logs archive-store archive-bucket` names the missing setting.
+   A required setting that is missing stops the start and is named. Most are named by `docker compose up` itself. `ARCHIVE_KEY`, and an `ARCHIVE_DIR` that is not an absolute path, are checked when the engine starts: `up` reports that `ememory-api` is not healthy, the workers do not start, and `docker compose logs ememory-api` names the setting.
 
    Another eMemory stack already running on this machine? Give this one its own project name and ports: set `EMEMORY_PORT`, `CONSOLE_PORT` and `EMEMORY_NETWORK` in `.env` (see [workers and schedule](../configuration/workers.md)) and start it with `docker compose -p <name> up -d`.
 
@@ -139,9 +139,9 @@ From nothing to an agent storing and finding a record, on one machine, in eleven
 |---|---|---|
 | `POSTGRES_PASSWORD` | The database's password. Fixed into the database volume the first time the stack starts | Letters and digits; `init` writes 48 hex characters (`openssl rand -hex 24`) |
 | `REDIS_PASSWORD` | The job queue's password, carried by the engine and every worker | Letters and digits; `init` writes 48 hex characters (`openssl rand -hex 24`). A quote or backslash breaks the queue password, so do not add one by hand |
-| `ARCHIVE_ACCESS_KEY`, `ARCHIVE_SECRET_KEY` | The login for the stack's own archive store, the `archive-store` service on this machine — not an Amazon account. Any pair becomes that store's one identity at start | Letters and digits; `init` writes 40 and 64 hex characters (`openssl rand -hex 20`, `openssl rand -hex 32`). A quote or backslash breaks the archive login, so do not add one by hand |
 | `ARCHIVE_KEY` | The key every archive object is encrypted with (AES-256-GCM). Keep it in a password manager, apart from the archive | **Required:** 32 random bytes, base64-encoded (`openssl rand -base64 32`) |
-| `ARCHIVE_DIR` | The host folder that holds the encrypted archive. It must exist before the stack starts; a missing one is refused, never created empty | An absolute path with no `.` or `..` in it; make the folder first (`mkdir -p`) |
+| `ARCHIVE_MODE` | Where the archive is: `local`, the folder below. The template ships it; `init` leaves it as it is | `local`; `s3` for an S3 bucket, or `disabled` for none ([archive settings](../configuration/archive.md)) |
+| `ARCHIVE_DIR` | The host folder that holds the encrypted archive, one file per object. It must exist before the stack starts; a missing one is refused, never created empty | An absolute path with no `.` or `..` in it; make the folder first (`mkdir -p`) |
 
 ## Reading the docs
 

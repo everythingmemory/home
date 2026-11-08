@@ -8,7 +8,7 @@ The words these docs use, each with one meaning.
 | **Agent** | The AI system that calls the tools. |
 | **Agent profile** | A named set of lanes a call may read and write: a home lane, and others. The caller names it on a call; a call that names none runs under the engine's default agent profile. See [agent profiles](../governance/agent-profiles.md). |
 | **Authority** | The level a record was labelled with when written. From highest to lowest: human correction, human confirmation, documentary, conversational, system inference. The engine does not rank by it. See [authority](../data-model/authority.md). |
-| **Archive** | The durable copy of everything the engine knows, kept in S3-compatible object storage when it is turned on. The database can be rebuilt from it. See [the archive](../durability/archive-and-restore.md). |
+| **Archive** | The durable copy of everything the engine knows, kept, when it is turned on, as encrypted files in a folder on the machine or in an S3 bucket. The database can be rebuilt from it. See [the archive](../durability/archive-and-restore.md). |
 | **Correction** | A statement of the truth, pinned to a record that was wrong. See [corrections](../agents-how-to/correcting-a-record.md). |
 | **Edge property** | A `label:value` pair on a record, such as `org:Acme`. Records that share one are joined by it: one N-ary edge touching every record that carries it. See [edge properties](../data-model/edge-properties.md). |
 | **Edge Property Graph (EPG)** | The graph that records and their edge properties form, held in PostgreSQL with no separate graph store. See [the EPG](../architecture/edge-property-graph.md). |

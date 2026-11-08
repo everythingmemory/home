@@ -1,6 +1,6 @@
 # Offline Stack
 
-Running a stack with no internet access: images prepared on a connected machine, carried in as files, with the local embedding model and the local archive store.
+Running a stack with no internet access: images prepared on a connected machine, carried in as files, with the local embedding model and the archive in a local folder.
 
 The deployment option: [a single stack on one machine, with no internet needed](../deployment-options/one-machine.md).
 
@@ -9,7 +9,7 @@ The deployment option: [a single stack on one machine, with no internet needed](
 - The embedding model runs in the stack (`local-embed`), behind the model gateway, with the default route `nomic-embed-text`. It needs no key and sends nothing out.
 - The gateway makes no outbound call at start: no usage report, and its price map is read from its image.
 - WordNet's corpus is in the WordNet plugin's image.
-- The archive is the bundled archive store, on local disk.
+- The archive is a folder on local disk, written by the engine.
 
 Do not switch the gateway to a provider's route on an offline stack: that route sends record text to the provider.
 

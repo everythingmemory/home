@@ -8,7 +8,7 @@ Challenges addressed: [Context Window Limits and Lossy Compaction](../use-cases/
 
 | Layer | What it holds | Its job | If it is lost |
 |---|---|---|---|
-| **The archive** — the bundled store, in the folder you name, or your own S3-compatible bucket | every version of every record, every correction, policy event and audit event, and the vectors, as encrypted objects | **durability:** the data itself, kept for good | it is the memory — back it up, and keep its key apart |
+| **The archive** — encrypted files in the folder you name, or your own S3-compatible bucket | every version of every record, every correction, policy event and audit event, and the vectors, as encrypted objects | **durability:** the data itself, kept for good | it is the memory — back it up, and keep its key apart |
 | **The index** — Percona's PostgreSQL | the same records arranged for retrieval: ledgers of versions, and caches of each record's current state, edge properties, tags and vectors | **speed:** every kind of lookup an agent needs, in milliseconds | the engine rebuilds it from the archive |
 | **Vectors, optionally in Qdrant** | the vectors, instead of in PostgreSQL | **scale:** similarity search moved to a dedicated vector store, taking that load off the database, so the stack can hold more records | refilled from the archive, like the rest of the index |
 
@@ -44,4 +44,4 @@ Both are built to scale: in PostgreSQL, each collection has its own HNSW index o
 - **One index to run.** One database to deploy, secure, monitor and size, instead of three or four, each with its own consistency, access control and backup story.
 - **Consistent by construction.** A record and the properties it is given are written in one transaction; its tags and vectors follow shortly after from the ingest worker.
 - **Encrypted at both layers.** The archive's objects are encrypted with your key; the shipped database runs Percona's transparent data encryption, so every table and index on disk is encrypted too.
-- **Familiar to the people who approve it.** Operators and security teams already know how to run, audit and harden PostgreSQL and S3-compatible storage.
+- **Familiar to the people who approve it.** Operators and security teams already know how to run, audit and harden PostgreSQL, a folder of files, and S3-compatible storage.

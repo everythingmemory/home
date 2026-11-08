@@ -61,7 +61,7 @@ Every record lives in exactly one lane. An **agent profile** names the lanes a c
 
 ## Keeping and sharing
 
-Postgres is the live index; the **archive** is the durable store it can be rebuilt from. The engine writes its records, and what has happened to them, as objects in S3-compatible object storage — the stack's bundled archive store by default. An engine that loses its database rebuilds from the archive. See [Durability](../durability/index.md).
+Postgres is the live index; the **archive** is the durable store it can be rebuilt from. The engine writes its records, and what has happened to them, as objects: by default one encrypted file per object in a folder on the machine, or in an S3 bucket. An engine that loses its database rebuilds from the archive. See [Durability](../durability/index.md).
 
 Engines connected to one another form a **mesh**. Peering sets two engines up as **peers**; they then exchange records. See [Mesh](distributed-mesh-architecture.md).
 

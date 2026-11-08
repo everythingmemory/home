@@ -1,12 +1,12 @@
 # Archive and Restore
 
-Anyone running memory in production needs it to survive the loss of its database, and its history kept even after records are deleted. The archive writes every record version, correction, policy event, audit event and vector to S3-compatible storage — the bundled store or one of their own — with object bodies encrypted; an engine that loses its database starts on an empty one, rebuilds from the archive and reports when it has finished; and the engine never deletes an object from the archive.
+Anyone running memory in production needs it to survive the loss of its database, and its history kept even after records are deleted. The archive writes every record version, correction, policy event, audit event and vector to a folder on the machine or to an S3 bucket of their own, with object bodies encrypted; an engine that loses its database starts on an empty one, rebuilds from the archive and reports when it has finished; and the engine never deletes an object from the archive.
 
 Challenges addressed: [Auditable Decision-Making](../use-cases/auditing-agentic-decisions.md), [Tracking Changes Through Time](../use-cases/data-evolution.md).
 
 ## Concepts
 
-Records, corrections, policy events and audit events are written as objects to S3-compatible storage shortly after each change, and an engine that loses its database rebuilds from the archive.
+Records, corrections, policy events and audit events are written as objects — files in the archive folder, or objects in an S3 bucket — shortly after each change, and an engine that loses its database rebuilds from the archive.
 
 Postgres is the live index; the archive is the durable store it can be rebuilt from. The index is replaceable by design.
 
@@ -16,25 +16,24 @@ When the database is gone, the engine boots on an empty one and replays the arch
 
 ## What turns it on
 
-The archive is on in the shipped stack. It is stored by the bundled archive store: SeaweedFS, S3-compatible, writing to the host folder `ARCHIVE_DIR`, which is bind-mounted into it. Endpoint settings point it instead at an external S3-compatible store, such as DigitalOcean Spaces, Amazon S3 or MinIO. The engine reaches the archive through an S3-compatible API only.
+The archive is on in the shipped stack. The engine writes it itself, one encrypted file per object, in the host folder `ARCHIVE_DIR`, which is bind-mounted into the engine and its workers. `ARCHIVE_MODE=s3` puts it in an S3 bucket instead, on a store such as DigitalOcean Spaces, Amazon S3 or MinIO. See [archive settings](../configuration/archive.md) for how the folder is written.
 
 ```mermaid
 flowchart LR
-  workers["Workers"] --> local["Archive Store<br/>(bundled SeaweedFS, default)"]
-  workers -. "or, by endpoint settings" .-> ext["External S3-compatible store"]
+  workers["Workers"] --> local["Archive folder<br/>(ARCHIVE_DIR, default)"]
+  workers -. "or, with ARCHIVE_MODE=s3" .-> ext["S3 bucket"]
 ```
 
 | Setting | What it does |
 |---|---|
-| `ARCHIVE_ENABLED` | `true` in the shipped stack |
-| `ARCHIVE_ENDPOINT_URL`, `ARCHIVE_BUCKET` | Where the archive lives |
-| `ARCHIVE_ACCESS_KEY`, `ARCHIVE_SECRET_KEY` | The login for the archive store. Required |
-| `ARCHIVE_DIR` | The absolute path of the host folder the bundled archive store writes to. Required; it must exist before the first start |
+| `ARCHIVE_DIR` | The absolute path of the host folder that holds the archive. Required; it must exist before the first start |
+| `ARCHIVE_MODE` | `local` (the folder), `s3` (a bucket) or `disabled` (no archive). Required; the template ships `local` |
+| `ARCHIVE_BUCKET`, `ARCHIVE_ENDPOINT_URL`, `ARCHIVE_ACCESS_KEY`, `ARCHIVE_SECRET_KEY` | The S3 bucket and its store's login, with `ARCHIVE_MODE=s3`. Empty in the shipped stack |
 | `REDIS_PASSWORD` | The job queue's password. Required |
 | `ARCHIVE_KEY` | The archive encryption key: the bodies of objects are encrypted with AES-256-GCM. Required. Object names, which include record ids, are not encrypted |
 | `CRON_ENABLED` | Runs the restore sweep, the backfill from database to archive, and the audit archive |
 
-The stack refuses to start without the archive store's login and the archive encryption key. `./e.sh init` generates all three.
+The stack refuses to start without the archive encryption key. `./e.sh init` generates it.
 
 ## What to back up
 
@@ -51,6 +50,8 @@ To move an engine to new hardware, give a fresh stack the same archive and `ARCH
 
 ## What the archive holds
 
+In the folder each prefix is a subfolder, and each object a file under it.
+
 | Prefix | Contents |
 |---|---|
 | `srs/` | Each version of each record — its whole state: content, lane, the edge properties declared on it, and whether it is deleted — one object per version. A rebuilt engine derives tags and extracted edge properties again from the content |
@@ -62,10 +63,10 @@ To move an engine to new hardware, give a fresh stack the same archive and `ARCH
 | `peers/` | The peer registry, without its keys |
 
 ## Example
-Acme points its engine at its own S3-compatible store.
+Acme keeps its engine's archive in a bucket on its own S3-compatible store.
 
 ```bash
-ARCHIVE_ENABLED=true
+ARCHIVE_MODE=s3
 ARCHIVE_ENDPOINT_URL=https://objects.acme.example
 ARCHIVE_BUCKET=acme-memory
 ARCHIVE_ACCESS_KEY=<access key>
@@ -95,7 +96,7 @@ curl -H "Authorization: Bearer $EMEMORY_API_KEY" https://memory.acme.example/api
 `restore_converged` is `true` only when the last sweep finished reading the archive, the archive was not empty, and the sweep brought nothing back. An object it could not decrypt, or a fetch it abandoned, keeps it `false`; a record it refused, such as a deleted one, does not. It is `false` while a sweep is still running and when the archive is off, and `null` before any sweep has run. `archive_empty` is `true` when the sweep finished and every prefix it listed was empty: a wrong prefix, or an archive nothing was written to. `last_sweep.counters` in the same response counts what the last pass restored and what it refused.
 
 ## Implications
-**The engine never deletes an object from the archive.** It has no delete call for object storage. It does overwrite vector, peer, identity and audit objects in place; record versions, corrections and policy events are written once. A deleted record's objects stay there: a restore brings the record back deleted, and refuses its vectors, counting them as `embeddings_skipped_tombstoned`.
+**The engine never deletes an object from the archive.** It has no delete call for the archive. It does overwrite vector, peer, identity and audit objects in place; record versions, corrections and policy events are written once. A deleted record's objects stay there: a restore brings the record back deleted, and refuses its vectors, counting them as `embeddings_skipped_tombstoned`.
 
 **Credentials are not in the archive.** A restored peer comes back with its cursors and the status `needs_credential`. It exchanges nothing until it is re-keyed; then it returns to `active` with its restored cursors. For a peer with a `peer_url`, send `POST /api/v1/sync/peers` again with that `peer_url` and its `auth_token`. For a peer with no `peer_url`, mint a new key with `POST /api/v1/sync/peers/{peer_id}/inbound-key` and give it to that peer.
 

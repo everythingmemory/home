@@ -29,7 +29,7 @@ block-beta
   a4<["&nbsp;"]>(down)
   block:data
     columns 4
-    l4["Data tier"] pg["Postgres — the index"] archive["Archive store — the memory"] space
+    l4["Data tier"] pg["Postgres — the index"] archive["Archive folder — the memory"] space
   end
   style clients fill:#e8f2fc,stroke:#7aa7d6
   style iface fill:#e8f2fc,stroke:#7aa7d6
@@ -88,9 +88,7 @@ The default route needs no key and sends nothing off the machine. The gateway ca
 
 ### Persistence
 
-| Service | Container | What it is | Holds or does |
-|---|---|---|---|
-| Archive Store | `archive-store`, `archive-bucket` | SeaweedFS | The [archive](../durability/index.md): S3-compatible object storage on local disk, in the host folder `ARCHIVE_DIR` |
+The [archive](../durability/index.md) is not a service. The API service and the workers write it themselves, one encrypted file per object, in the host folder `ARCHIVE_DIR`, mounted into each of them at `/archive`. With `ARCHIVE_MODE=s3`, they write an S3 bucket instead ([archive settings](../configuration/archive.md)).
 
 ### Interfaces
 

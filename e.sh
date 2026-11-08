@@ -96,7 +96,7 @@
 #                                         engine checks the names when it restarts. Runs here: no --url, no
 #                                         engine call
 #   init [--archive-dir PATH]             first setup, on this machine: write .env from .env.example with
-#                                         fresh passwords and archive keys, make the archive folder
+#                                         fresh passwords and the archive key, make the archive folder
 #                                         (default $HOME/ememory-data/archive) and name it as ARCHIVE_DIR,
 #                                         and start conf/keys.yaml. Refuses when .env exists. Prints no
 #                                         secret but ARCHIVE_KEY, once. Runs here: no --url, no engine call
@@ -189,8 +189,6 @@ if [[ "$noun" == "init" ]]; then
   }
   _set POSTGRES_PASSWORD "$(_hex 24)"
   _set REDIS_PASSWORD "$(_hex 24)"
-  _set ARCHIVE_ACCESS_KEY "$(_hex 20)"
-  _set ARCHIVE_SECRET_KEY "$(_hex 32)"
   _set ARCHIVE_KEY "$ARCHIVE_KEY_VALUE"
   _set ARCHIVE_DIR "$ARCHIVE"
   mkdir -p "$ARCHIVE"
@@ -203,8 +201,8 @@ if [[ "$noun" == "init" ]]; then
     awk '{ print } /^keys:/ { exit }' "$HERE/conf/keys.yaml.example" > "$KEYS"
     KEYS_NOTE="Started conf/keys.yaml (no keys yet)."
   fi
-  echo "Wrote $ENV_FILE: fresh POSTGRES_PASSWORD, REDIS_PASSWORD, ARCHIVE_ACCESS_KEY,"
-  echo "ARCHIVE_SECRET_KEY and ARCHIVE_KEY, and ARCHIVE_DIR=$ARCHIVE (made)."
+  echo "Wrote $ENV_FILE: fresh POSTGRES_PASSWORD, REDIS_PASSWORD and ARCHIVE_KEY,"
+  echo "and ARCHIVE_DIR=$ARCHIVE (made)."
   echo "$KEYS_NOTE"
   echo
   echo "Save ARCHIVE_KEY in your password manager now — a lost key is an unreadable archive:"
