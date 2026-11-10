@@ -7,7 +7,7 @@ Connect Claude Code, Claude Desktop and claude.ai to an eMemory stack over MCP: 
 | | |
 |---|---|
 | Endpoint | `http://localhost:8765/mcp` for a stack on this machine (streamable HTTP); `https://<your host>/mcp` for a stack published over HTTPS |
-| Credential | With `AUTH_ENABLED=true`, the header `Authorization: Bearer <client key>`, where the key has an entry in `conf/keys.yaml`. With authentication off, no header |
+| Credential | With `AUTH_ENABLED=true`, the header `Authorization: Bearer <client key>`, a key the engine holds. With authentication off, no header |
 | Agent profile | Named per call with the `agent_profile` argument; a call that names none runs as the engine's default agent profile. A key scoped to profiles acts only as those. Tell the agent which to use in its instructions or a skill |
 
 Create a client key: see [client keys](connecting-clients-and-operating.md#client-keys).

@@ -22,13 +22,14 @@
 #   one pass:        FOLDER=/abs/path docker compose -f docker-compose.folder.yml -p intake-once run --rm folder-intake /abs/path
 #
 # AUTH: a stack with AUTH_ENABLED=true needs a client key here, from the shell
-# or a .env beside this file: EMEMORY_API_KEY=<key> (its entry in the engine's
-# conf/keys.yaml). Unset, nothing is sent — right for the auth-off default.
+# or a .env beside this file: EMEMORY_API_KEY=<key> (a client key the engine
+# holds, ./e.sh client-key create). Unset, nothing is sent — right for the
+# auth-off default.
 services:
   folder-intake:
     # Published to GHCR and pinned by scripts/pin-images.sh at a release;
     # building it here instead is docker-compose.folder.build.yml.
-    image: ghcr.io/everythingmemory/folder-intake:1.2.22@sha256:9c2043ede47f6f4317264e4570908501c104949aae29102f18520afebf91138a
+    image: ghcr.io/everythingmemory/folder-intake:1.2.23@sha256:e4753646b6daf543dd18ec8b9d2805ea0d8c4218a500aadaeb9b09e8c2193b73
     restart: unless-stopped
     mem_limit: 512m
     logging:

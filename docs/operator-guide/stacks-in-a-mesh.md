@@ -7,7 +7,7 @@ The deployment option: [stacks in a mesh](../deployment-options/stacks-in-a-mesh
 ## Before you start
 
 - Two stacks, A and B, each started as in the [quickstart](quickstart.md).
-- On both: `AUTH_ENABLED=true`, a client key in `conf/keys.yaml` (`./e.sh client-key create`) that may do `peers` work — a key with no scope may, and the API service published to the other (`COMPOSE_FILE=docker-compose.yml:docker-compose.open.yml`). Peering refuses while authentication is off.
+- On both: `AUTH_ENABLED=true`, a client key (`./e.sh client-key create`) that may do `peers` work — a key with no scope may, and the API service published to the other (`COMPOSE_FILE=docker-compose.yml:docker-compose.open.yml`). Peering refuses while authentication is off.
 - `e.sh` on the operator's machine. Set, for whichever engine you are working on:
 
   ```bash

@@ -5,7 +5,7 @@ From nothing to an agent storing and finding a record, on one machine, in eleven
 ## Before you start
 
 - **A container engine with Docker Compose 2.24.4 or later**: step 1 gives the choices. It is the only thing to install besides `openssl` or `python3`; the stack runs as containers.
-- `openssl` or `python3`, for `./e.sh init`, and `python3`, for `./e.sh client-key create`.
+- `openssl` or `python3`, for `./e.sh init`, and `python3`, for `./e.sh client-key`.
 
 ## Steps
 
@@ -59,11 +59,11 @@ From nothing to an agent storing and finding a record, on one machine, in eleven
    ./e.sh init
    ```
 
-   This writes `.env`, the stack's one settings file, from `.env.example`, with its passwords and the archive key generated (see [the settings it writes](#the-settings-init-writes)). It makes the archive folder, `$HOME/ememory-data/archive`, and names it as `ARCHIVE_DIR`; to put the archive elsewhere, pass `--archive-dir` with an absolute path. It also starts `conf/keys.yaml`, the client-key registry, with no keys yet. It never overwrites an existing `.env`.
+   This writes `.env`, the stack's one settings file, from `.env.example`, with its passwords and the archive key generated (see [the settings it writes](#the-settings-init-writes)). It makes the archive folder, `$HOME/ememory-data/archive`, and names it as `ARCHIVE_DIR`; to put the archive elsewhere, pass `--archive-dir` with an absolute path. It also mints the first client key, `client`, with no scope: it prints the key once and writes only its hash, to `SEED_KEY_HASHES`, which the engine reads when it first starts with no keys. It never overwrites an existing `.env`.
 
    The archive folder survives `docker compose down -v`, and you back it up and move it with your own tools. On macOS with Docker Desktop, keep it under your home folder, which Docker Desktop shares by default.
 
-4. **Save `ARCHIVE_KEY`.** `init` prints it once. Put it in your password manager, never beside the archive folder: every archive object is encrypted with it, a lost key is an unreadable archive, and a key stored with the archive protects nothing.
+4. **Save `ARCHIVE_KEY` and the client key.** `init` prints each once. Keep the client key for whoever runs this stack (`EMEMORY_API_KEY` for `./e.sh`). Put it in your password manager, never beside the archive folder: every archive object is encrypted with it, a lost key is an unreadable archive, and a key stored with the archive protects nothing.
 
 5. **Start the stack.**
 
@@ -85,13 +85,13 @@ From nothing to an agent storing and finding a record, on one machine, in eleven
 
    Expect `"status":"healthy"`, with `"embedding":{"model":"nomic-embed-text","width":768,"state":"ok"}`. Until every service is up it can answer `degraded`; give it a minute.
 
-7. **Create a client key** (needed once authentication is on; `.env` starts with it off, which is safe because the stack answers on this machine only).
+7. **Turn authentication on, when you need it** (`.env` starts with it off, which is safe because the stack answers on this machine only). Set `AUTH_ENABLED=true` in `.env` and run `docker compose up -d` again; a call without a key then gets `401`. The `client` key from step 4 has no scope and opens everything. Create a key for each client in the engine. It takes effect on its next call, with no restart:
 
    ```bash
-   ./e.sh client-key create --label me
+   EMEMORY_URL=http://localhost:8765 EMEMORY_API_KEY=<the client key> ./e.sh client-key create --label me
    ```
 
-   It prints the key (`emem_…`) once and adds its entry — the label and the key's hash — to `conf/keys.yaml`. Keep the key for the client. To turn authentication on, set `AUTH_ENABLED=true` in `.env` and run `docker compose up -d` again so the stack picks up the change; a call without a key then gets `401`. A key with no scope opens everything; to confine one, see [client keys](../configuration/authentication.md#client-keys).
+   It prints the key (`emem_…`) once; the engine keeps only its hash. To confine a key, see [client keys](../configuration/authentication.md#client-keys).
 
 8. **Open the console** at `http://localhost:8766/` (the port is `CONSOLE_PORT`) and sign in with a client key. Create a key just for it:
 
@@ -142,6 +142,7 @@ From nothing to an agent storing and finding a record, on one machine, in eleven
 | `ARCHIVE_KEY` | The key every archive object is encrypted with (AES-256-GCM). Keep it in a password manager, apart from the archive | **Required:** 32 random bytes, base64-encoded (`openssl rand -base64 32`) |
 | `ARCHIVE_MODE` | Where the archive is: `local`, the folder below. The template ships it; `init` leaves it as it is | `local`; `s3` for an S3 bucket, or `disabled` for none ([archive settings](../configuration/archive.md)) |
 | `ARCHIVE_DIR` | The host folder that holds the encrypted archive, one file per object. It must exist before the stack starts; a missing one is refused, never created empty | An absolute path with no `.` or `..` in it; make the folder first (`mkdir -p`) |
+| `SEED_KEY_HASHES` | The first client keys, read only while the engine holds none. `init` writes one, `client`, and prints the key once | `label:hash,…`, each hash the key's SHA-256 (64 hex characters) |
 
 ## Reading the docs
 

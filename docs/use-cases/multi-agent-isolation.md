@@ -14,7 +14,7 @@ All of it is done with [policies](../governance/policies.md) and [lanes](../gove
 Isolation and [coordination](agent-swarm-coordination.md) are the same mechanism used two ways: grant read on another lane and agents build on each other's work; grant nothing and they never see each other.
 
 ## What isolation covers
-The agent profile is named on each call, and the engine enforces that profile's lanes. Give each agent's harness its own profile and its own client key, scoped to that profile in `conf/keys.yaml`: the key then acts only as that profile, a call naming another is refused, and every act is recorded in the audit log under the key's label. See [client keys](../configuration/authentication.md#client-keys).
+The agent profile is named on each call, and the engine enforces that profile's lanes. Give each agent's harness its own profile and its own client key, scoped to that profile (`./e.sh client-key create --profiles`): the key then acts only as that profile, a call naming another is refused, and every act is recorded in the audit log under the key's label. See [client keys](../configuration/authentication.md#client-keys).
 
 ## Example
 A policy with one lane per client:

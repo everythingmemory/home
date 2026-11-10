@@ -29,16 +29,17 @@
 # and it binds 127.0.0.1 only: nothing off this machine reaches it. AUTH_ENABLED
 # is stated in .env, never defaulted here — the template ships `false` so
 # a first run needs no key, which is safe only because of that loopback bind.
-# With AUTH_ENABLED=true every caller but /health carries a client key whose
-# SHA-256 is in conf/keys.yaml (read through the ./conf mount below), and the
-# engine refuses to boot with auth on and neither a key nor OAuth. Reaching the engine from other machines is the
+# With AUTH_ENABLED=true every caller but /health carries a client key the
+# engine holds (: ./e.sh init seeds the first through SEED_KEY_HASHES
+# in .env; ./e.sh client-key makes the rest), and the engine refuses to boot
+# with auth on and neither a key nor OAuth. Reaching the engine from other machines is the
 # overlay docker-compose.open.yml, which also forces auth on.
 # The database, the queue and the plugins publish nothing — the engine reaches
 # them by service name on this stack's own network.
 
 services:
   ememory-api:
-    image: ghcr.io/everythingmemory/core:1.2.22@sha256:61f44f00d2bd67da4f832e51df8ecb9774c13e74a41dc08484dcbc7e4c9858d1
+    image: ghcr.io/everythingmemory/core:1.2.23@sha256:ce24f7db4531ca872a4051bb9915cf9c3036d2aaa7c8eb4821d01c86e6fa57f3
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
     # the archive (47,934 records, 2026-10-14). A runaway is killed and
@@ -294,7 +295,7 @@ services:
   # conf/gateway.yaml routes EMBEDDING_MODEL=nomic-embed-text to it. It
   # publishes nothing; the gateway reaches it by service name.
   local-embed:
-    image: ghcr.io/everythingmemory/local-embed:1.2.22@sha256:9ee9cee9e0f307bfd49af64c075014208dfaa07318739bf98dd98a92e4ec1c0e
+    image: ghcr.io/everythingmemory/local-embed:1.2.23@sha256:74a9edda92d8e768f2528fec95398238839140f9bde2137583a32462c2c11c76
     restart: unless-stopped
     # The model is 146 MB. Measured 2026-10-30: 81 MiB after the same burst
     # through the gateway. The ceiling is generous until measured on a corpus.
@@ -320,7 +321,7 @@ services:
   console:
     # Built in the console's own repository; pinned here with the rest by
     # scripts/pin-images.sh. Bump only in an upgrade cycle.
-    image: ghcr.io/everythingmemory/console:1.2.22@sha256:5ee7846fbdf6d7caeb867f517528be4f7bf5c9d34390a17e713cd4f6cb974bb2
+    image: ghcr.io/everythingmemory/console:1.2.23@sha256:f342377efc6b9513bb8479f710dcd4c32f5b81b1e6f7aec8199c52a109653e08
     restart: unless-stopped
     # Started after the engine's container exists, so the `ememory-api` name
     # resolves when the console first looks; the engine being ready is not
@@ -352,7 +353,7 @@ services:
     # no wget or curl for one written here to call.
 
   ememory-worker:
-    image: ghcr.io/everythingmemory/core:1.2.22@sha256:61f44f00d2bd67da4f832e51df8ecb9774c13e74a41dc08484dcbc7e4c9858d1
+    image: ghcr.io/everythingmemory/core:1.2.23@sha256:ce24f7db4531ca872a4051bb9915cf9c3036d2aaa7c8eb4821d01c86e6fa57f3
     entrypoint: ["python", "-m", "arq", "core.worker.WorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
@@ -412,7 +413,7 @@ services:
   # hour. Same image, same mounts, same env as ememory-worker — only the arq
   # settings class and the concurrency differ.
   ememory-worker-archive:
-    image: ghcr.io/everythingmemory/core:1.2.22@sha256:61f44f00d2bd67da4f832e51df8ecb9774c13e74a41dc08484dcbc7e4c9858d1
+    image: ghcr.io/everythingmemory/core:1.2.23@sha256:ce24f7db4531ca872a4051bb9915cf9c3036d2aaa7c8eb4821d01c86e6fa57f3
     entrypoint: ["python", "-m", "arq", "core.worker.ArchiveWorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
@@ -474,7 +475,7 @@ services:
   # the other two. It is the ONLY worker that runs task_derive_tags, so the
   # tag index is not filled without it.
   ememory-worker-maintenance:
-    image: ghcr.io/everythingmemory/core:1.2.22@sha256:61f44f00d2bd67da4f832e51df8ecb9774c13e74a41dc08484dcbc7e4c9858d1
+    image: ghcr.io/everythingmemory/core:1.2.23@sha256:ce24f7db4531ca872a4051bb9915cf9c3036d2aaa7c8eb4821d01c86e6fa57f3
     entrypoint: ["python", "-m", "arq", "core.worker.MaintenanceWorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
@@ -534,7 +535,7 @@ services:
   # ememory-worker did. It is the ONLY worker that runs task_ingest, so an
   # asynchronous ingest is not extracted or embedded without it.
   ememory-worker-ingest:
-    image: ghcr.io/everythingmemory/core:1.2.22@sha256:61f44f00d2bd67da4f832e51df8ecb9774c13e74a41dc08484dcbc7e4c9858d1
+    image: ghcr.io/everythingmemory/core:1.2.23@sha256:ce24f7db4531ca872a4051bb9915cf9c3036d2aaa7c8eb4821d01c86e6fa57f3
     entrypoint: ["python", "-m", "arq", "core.worker.IngestWorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
     restart: unless-stopped
     # Memory limit: ememory-worker's, which ran task_ingest until this worker
@@ -595,7 +596,7 @@ services:
   #their code stays in plugins/ as a menu option, run by adding
   # their services in an overlay of your own.
   chrono-engine:
-    image: ghcr.io/everythingmemory/chrono-engine:1.2.22@sha256:0e4e5ae3074316100990e0e1cbd29fc2dfa0da8b70044e408990fd81266fb9b0
+    image: ghcr.io/everythingmemory/chrono-engine:1.2.23@sha256:12dd9c5ee1e2e44aecd0f74f0c7dbc9df0a8a8cb465f735222c3d4248b5de6e1
     restart: unless-stopped
     # A ceiling: a runaway kills this container and not a neighbour, and the
     # restart policy brings it back. Not yet measured.
@@ -614,7 +615,7 @@ services:
       start_period: 5s
 
   plugin-chrono:
-    image: ghcr.io/everythingmemory/plugin-chrono:1.2.22@sha256:ec5577a8662f65a44e986996f39a642a38f3dd5c1a5b62be99825fc77ce37072
+    image: ghcr.io/everythingmemory/plugin-chrono:1.2.23@sha256:6b5888cdef1e0c44b1db19f42c84b8df69e262cccfc8940a27ed681fc196ed04
     restart: unless-stopped
     # Not yet measured.
     mem_limit: 128m
@@ -637,7 +638,7 @@ services:
     command: ["uvicorn", "chrono_plugin.app:app", "--host", "0.0.0.0", "--port", "8000"]
 
   plugin-wordnet:
-    image: ghcr.io/everythingmemory/plugin-wordnet:1.2.22@sha256:89421e683816514c8c77a4e4b8afe574e8e0f9be53a454dcab88d1ec76433b7a
+    image: ghcr.io/everythingmemory/plugin-wordnet:1.2.23@sha256:ce9e8945e9fc43895dbb70eafbca3cb366cd073b3f3238c4a225788752fadd19
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
     # the archive (47,934 records, 2026-10-14). A runaway is killed and

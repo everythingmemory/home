@@ -24,7 +24,7 @@ To try it, no key is needed: the template ships `AUTH_ENABLED=false`, and port 8
 
 ## Client keys
 
-With `AUTH_ENABLED=false` (the template's value) every caller on this machine is accepted without a key. With `AUTH_ENABLED=true`, every caller except `/health` sends `Authorization: Bearer <key>`, and the engine holds only each key's SHA-256 hash, in `conf/keys.yaml`.
+With `AUTH_ENABLED=false` (the template's value) every caller on this machine is accepted without a key. With `AUTH_ENABLED=true`, every caller except `/health` sends `Authorization: Bearer <key>`, and the engine holds only each key's SHA-256 hash. `./e.sh init` mints the first key, `client`.
 
 Create one key per client and give the key to that client:
 
@@ -32,7 +32,7 @@ Create one key per client and give the key to that client:
 ./e.sh client-key create --label <name>
 ```
 
-It prints the key once and appends its entry — label, hash and any scope — to `conf/keys.yaml`; restart the stack to use it. Add `--profiles`, `--policies` or `--operations` to confine a key; with none, the key opens everything. Deleting an entry revokes that key. With authentication on and no key, the engine refuses to start. With authentication on, the [audit log](../durability/the-audit-log.md) records which key made each write, by its label. The fields and the rules: [client keys](../configuration/authentication.md#client-keys).
+`e.sh` asks the engine to make the key. You need a key that may manage keys, such as `client`. The key is printed once and works on its next call; no restart. Add `--profiles`, `--policies` or `--operations` to confine a key; with none, the key opens everything. `./e.sh client-key revoke --label <name>` stops a key; `rotate` replaces it, keeping its scope. With authentication on and no key, the engine refuses to start. With authentication on, the [audit log](../durability/the-audit-log.md) records which key made each write, by its label. The fields and the rules: [client keys](../configuration/authentication.md#client-keys).
 
 ## Connect clients
 

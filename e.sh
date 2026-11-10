@@ -86,20 +86,31 @@
 #   peer    remove PEER_ID                unpair a peer
 #   peer    sync [PEER_ID]                on-demand push+pull (one peer, or all if omitted)
 #   peer    status                        this engine's sync status (cursors, peer count)
-#   client-key create --label L [--profiles a,b] [--policies p,q] [--operations x,y] [--file PATH]
-#                                         create a client key (emem_...): prints it ONCE, and appends its entry
-#                                         (label, hash, scope) to conf/keys.yaml (--file names another). Give
-#                                         the key to one holder: an agent's harness, or the console (a dedicated
-#                                         key for people). One key per holder; revoke it by deleting its entry.
-#                                         No scope flag = every profile and every operation; with any, only what
-#                                         they name. OPERATIONS: policies, peers, bundles, admin, records. The
-#                                         engine checks the names when it restarts. Runs here: no --url, no
-#                                         engine call
+#   client-key create --label L [--profiles a,b] [--policies p,q] [--operations x,y]
+#                                         create a client key IN THE ENGINE: it prints the key ONCE (the engine
+#                                         keeps only its hash). Give it to one holder: an agent's harness, or
+#                                         the console. No scope flag = every profile and every operation; with
+#                                         any, only what they name. OPERATIONS: policies, peers, bundles, admin,
+#                                         records. It works on its next call, no restart
+#   client-key list [--json]              every key: label, scope, and MANAGES — whether it may manage keys
+#                                         (only an unscoped key may). Hashes only, never a key
+#   client-key scope --label L [--profiles a,b] [--policies p,q] [--operations x,y] | --unscoped
+#                                         replace the key's whole scope
+#   client-key rotate --label L [--hash H] a new key for L, same scope, printed ONCE; the old one stops now.
+#                                         --hash H: you made the key; its SHA-256 (64 lowercase hex) replaces
+#                                         the old hash and nothing is printed but that
+#   client-key revoke --label L           the key stops now (the last key that can manage keys can't go)
+#   client-key download [--out FILE]      the list -> FILE (default client-keys.yaml), hashes only
+#   client-key upload FILE                send the edited list back: it changes scope only (create adds a
+#                                         key, rotate a hash, revoke removes one), all or nothing
+#                                         Every client-key verb needs an UNSCOPED key (admin is not enough)
 #   init [--archive-dir PATH]             first setup, on this machine: write .env from .env.example with
 #                                         fresh passwords and the archive key, make the archive folder
 #                                         (default $HOME/ememory-data/archive) and name it as ARCHIVE_DIR,
-#                                         and start conf/keys.yaml. Refuses when .env exists. Prints no
-#                                         secret but ARCHIVE_KEY, once. Runs here: no --url, no engine call
+#                                         and mint the first client key, `client` (unscoped): its hash goes
+#                                         in SEED_KEY_HASHES, read when the engine first starts with no
+#                                         keys. Refuses when .env exists. Prints ARCHIVE_KEY and the client
+#                                         key, once each. Runs here: no --url, no engine call
 #
 # Policy is an event-sourced ledger: download ONE source policy -> edit -> policy
 # upload (genesis-then-edit on its uuid; uuids are carried for lineage). `catalog`
@@ -176,6 +187,13 @@ if [[ "$noun" == "init" ]]; then
     exit 2
   fi
   ARCHIVE_KEY_VALUE="$(_base64)"
+  if command -v python3 >/dev/null 2>&1; then
+    CLIENT_KEY="$(python3 -c 'import secrets; print("emem_" + secrets.token_urlsafe(32))')"
+    _sha256() { printf '%s' "$1" | python3 -c 'import hashlib, sys; print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())'; }
+  else
+    CLIENT_KEY="emem_$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n')"
+    _sha256() { printf '%s' "$1" | openssl dgst -sha256 | sed 's/^.* //'; }
+  fi
   TMP_ENV="$(umask 077 && mktemp "$HERE/.env.init.XXXXXX")"
   trap 'rm -f "$TMP_ENV" "$TMP_ENV.next"' EXIT
   cp "$EXAMPLE" "$TMP_ENV"
@@ -191,117 +209,27 @@ if [[ "$noun" == "init" ]]; then
   _set REDIS_PASSWORD "$(_hex 24)"
   _set ARCHIVE_KEY "$ARCHIVE_KEY_VALUE"
   _set ARCHIVE_DIR "$ARCHIVE"
+  _set SEED_KEY_HASHES "client:$(_sha256 "$CLIENT_KEY")"
   mkdir -p "$ARCHIVE"
   chmod 600 "$TMP_ENV"
   [[ -e "$ENV_FILE" || -L "$ENV_FILE" ]] && { echo "error: $ENV_FILE appeared while init ran; left it alone" >&2; exit 2; }
   mv "$TMP_ENV" "$ENV_FILE"
-  KEYS="$HERE/conf/keys.yaml"
-  KEYS_NOTE="conf/keys.yaml is already there - left as it is."
-  if [[ ! -e "$KEYS" ]]; then
-    awk '{ print } /^keys:/ { exit }' "$HERE/conf/keys.yaml.example" > "$KEYS"
-    KEYS_NOTE="Started conf/keys.yaml (no keys yet)."
-  fi
   echo "Wrote $ENV_FILE: fresh POSTGRES_PASSWORD, REDIS_PASSWORD and ARCHIVE_KEY,"
-  echo "and ARCHIVE_DIR=$ARCHIVE (made)."
-  echo "$KEYS_NOTE"
+  echo "ARCHIVE_DIR=$ARCHIVE (made), and SEED_KEY_HASHES with the first client key, client."
   echo
   echo "Save ARCHIVE_KEY in your password manager now — a lost key is an unreadable archive:"
   echo
   echo "ARCHIVE_KEY=$ARCHIVE_KEY_VALUE"
   echo
+  echo "The client key \"client\" (unscoped: it may do everything, and manage keys). Shown"
+  echo "once, never stored - give it to whoever runs this engine, as EMEMORY_API_KEY:"
+  echo
+  echo "$CLIENT_KEY"
+  echo
   echo "Next:"
   echo "  docker compose up -d"
-  echo "  To turn auth on: ./e.sh client-key create --label you, then AUTH_ENABLED=true in .env"
+  echo "  To turn auth on: AUTH_ENABLED=true in .env; then ./e.sh client-key create makes more keys"
   exit 0
-fi
-
-if [[ "$noun" == "client-key" ]]; then
-  [[ "$verb" == "create" ]] || { echo "error: client-key create --label L [--profiles a,b] [--policies p,q] [--operations x,y] [--file PATH]" >&2; exit 2; }
-  KEYS_FILE="$(cd "$(dirname "$0")" && pwd)/conf/keys.yaml"
-  exec python3 - "$KEYS_FILE" "${REST[@]:2}" <<'PY'
-import hashlib, json, os, re, secrets, sys, tempfile
-
-OPERATIONS = ("policies", "peers", "bundles", "admin", "records")
-LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
-HEADER = ("# conf/keys.yaml - this engine's client keys (./e.sh client-key create).\n"
-          "# See conf/keys.yaml.example for the shape. Read when the engine starts.\n"
-          "keys:\n")
-
-def fail(text):
-    sys.stderr.write(f"error: {text}\n")
-    sys.exit(2)
-
-path, args = sys.argv[1], sys.argv[2:]
-opts = {}
-while args:
-    flag = args.pop(0)
-    if flag not in ("--label", "--profiles", "--policies", "--operations", "--file"):
-        fail(f"client-key create: unknown argument {flag!r}")
-    if not args:
-        fail(f"client-key create: {flag} needs a value")
-    opts[flag[2:]] = args.pop(0)
-label = opts.get("label", "")
-if not LABEL.fullmatch(label):
-    fail("client-key create needs --label: a word of letters, digits, '.', '_' or "
-         "'-' (up to 64), starting with a letter or digit - it names the key")
-path = opts.get("file", path)
-scope = {}
-for field in ("profiles", "policies", "operations"):
-    if field in opts:
-        names = [n.strip() for n in opts[field].split(",")]
-        if not all(names):
-            fail(f"--{field}: a comma-separated list of names, none empty")
-        scope[field] = names
-bad = sorted(set(scope.get("operations", ())) - set(OPERATIONS))
-if bad:
-    fail(f"--operations: unknown {', '.join(bad)}; the operations are {', '.join(OPERATIONS)}")
-
-text = HEADER
-mode = 0o644
-if os.path.exists(path):
-    with open(path) as fh:
-        text = fh.read()
-    mode = os.stat(path).st_mode & 0o777
-    if not re.search(r"^keys:[ \t]*(#.*)?$", text, re.M):
-        fail(f"{path} has no `keys:` line to append to; fix the file (see "
-             "conf/keys.yaml.example) and create the key again")
-    held = re.findall(r"^\s*-?\s*label:\s*[\"']?([^\"'\s#]+)", text, re.M)
-    if label in held:
-        fail(f"{path} already holds a key labelled '{label}'; labels are unique")
-    if text and not text.endswith("\n"):
-        text += "\n"
-
-key = "emem_" + secrets.token_urlsafe(32)
-entry = f"  - label: {label}\n    hash: \"{hashlib.sha256(key.encode()).hexdigest()}\"\n"
-for field, names in scope.items():
-    entry += f"    {field}: [{', '.join(json.dumps(n) for n in names)}]\n"
-
-directory = os.path.dirname(os.path.abspath(path))
-os.makedirs(directory, exist_ok=True)
-fd, tmp = tempfile.mkstemp(prefix=".keys.", dir=directory)
-try:
-    with os.fdopen(fd, "w") as fh:
-        fh.write(text + entry)
-    os.chmod(tmp, mode & ~0o022)
-    os.replace(tmp, path)
-except BaseException:
-    if os.path.exists(tmp):
-        os.unlink(tmp)
-    raise
-
-if not scope:
-    act_as, ops = "every profile", "every"
-else:
-    act_as = ", ".join(scope.get("profiles", []) +
-                       [f"the profiles of policy {p}" for p in scope.get("policies", [])]) or "no profile"
-    ops = ", ".join(scope.get("operations", [])) or "none"
-shown = "conf/keys.yaml" if "file" not in opts else path
-print(f'Created a client key for "{label}".  It may act as: {act_as}  '
-      f"(operations: {ops})  Its hash was added to {shown}; restart the stack "
-      "to use it.")
-print()
-print(f"{key}   <- give this to the agent; shown once, never stored")
-PY
 fi
 
 [[ -z "$URL" ]] && { echo "error: no URL (pass --url or set EMEMORY_URL)" >&2; exit 2; }
@@ -312,10 +240,18 @@ ADMIN="$URL/api/v2/admin"           # admin command dispatch (operations)
 SR="$URL/api/v2/source-records"     # source-record reads (admin)
 PROP="$URL/api/v2/properties"       # property discovery (admin)
 SYNC="$URL/api/v1/sync"             # P2P peering — register/list/unpair + on-demand sync
+CK="$URL/api/v2/client-keys"        # the client keys, in the engine
 
-CURL=(curl -sS -L)
-[[ -n "$INSECURE" ]] && CURL+=(--insecure)
-[[ -n "$TOKEN" ]] && CURL+=(-H "Authorization: Bearer $TOKEN")
+_curl() {
+  local opts=(-sS -L)
+  [[ -n "$INSECURE" ]] && opts+=(--insecure)
+  if [[ -n "$TOKEN" ]]; then
+    local t="${TOKEN//\\/\\\\}"; t="${t//\"/\\\"}"
+    printf 'header = "Authorization: Bearer %s"\n' "$t" | curl "${opts[@]}" --config - "$@"
+  else
+    curl "${opts[@]}" "$@"
+  fi
+}
 
 args=("${REST[@]:2}")
 
@@ -327,14 +263,19 @@ _req() {  # METHOD FULL_URL [extra curl args] -> formatted body; non-2xx -> stde
   local method="$1" url="$2"; shift 2
   local tmp code
   tmp="$(mktemp)"
-  code="$("${CURL[@]}" -o "$tmp" -w '%{http_code}' -X "$method" "$@" "$url")" \
+  code="$(_curl -o "$tmp" -w '%{http_code}' -X "$method" "$@" "$url")" \
     || { rm -f "$tmp"; echo "error: request failed ($url)" >&2; return 1; }
   if [[ "$code" =~ ^2[0-9][0-9]$ ]]; then _fmt <"$tmp"; rm -f "$tmp"
   else echo "HTTP $code" >&2; _fmt <"$tmp" >&2; rm -f "$tmp"; return 1; fi
 }
 
-_get_to_file() {  # FULL_URL OUTFILE (hard-fail on non-2xx)
-  "${CURL[@]}" -f "$1" -o "$2" || { echo "error: GET failed ($1)" >&2; exit 1; }
+_get_to_file() {  # FULL_URL OUTFILE (hard-fail on non-2xx, with the engine's reason)
+  local code
+  code="$(_curl -o "$2" -w '%{http_code}' "$1")" \
+    || { echo "error: GET failed ($1)" >&2; exit 1; }
+  if [[ ! "$code" =~ ^2[0-9][0-9]$ ]]; then
+    echo "error: GET failed ($1): HTTP $code" >&2; _fmt <"$2" >&2; exit 1
+  fi
 }
 
 _need_py() { command -v python3 >/dev/null 2>&1 || { echo "error: this view needs python3" >&2; return 1; }; }
@@ -667,7 +608,7 @@ case "$noun" in
         out="${out:-${name:-policy}.yaml}"
         q=""; [[ -n "$name" ]] && q="?policy=$(python3 -c 'import sys,urllib.parse;print(urllib.parse.quote(sys.argv[1]))' "$name")"
         tmp="$(mktemp)"
-        code="$("${CURL[@]}" -o "$tmp" -w '%{http_code}' "$AP/export$q")"
+        code="$(_curl -o "$tmp" -w '%{http_code}' "$AP/export$q")"
         if [[ "$code" =~ ^2[0-9][0-9]$ ]]; then mv "$tmp" "$out"; echo "downloaded ${name:+'$name' }-> $out" >&2
         else echo "error (HTTP $code): $(cat "$tmp")" >&2; rm -f "$tmp"; exit 1; fi ;;
       catalog)
@@ -838,6 +779,134 @@ case "$noun" in
       status)
         _req GET "$SYNC/status" ;;
       *) echo "error: peer {add|list|remove|sync|status|share|unshare|offers|accept|unaccept}" >&2; exit 2 ;;
+    esac ;;
+
+  client-key)
+    ck_usage="error: client-key {create|list|scope|rotate|revoke|download|upload} (see -h)"
+    _ck_args() {  # VERB ARGS... -> JSON {label?, profiles?, policies?, operations?, unscoped?}
+      python3 - "$@" <<'PY'
+import json, sys
+verb, args = sys.argv[1], sys.argv[2:]
+allowed = {"create": ("--label", "--profiles", "--policies", "--operations"),
+           "scope": ("--label", "--profiles", "--policies", "--operations", "--unscoped"),
+           "rotate": ("--label", "--hash"), "revoke": ("--label",)}[verb]
+out = {}
+while args:
+    flag = args.pop(0)
+    if flag not in allowed:
+        sys.exit(f"error: client-key {verb}: unknown argument {flag!r}")
+    if flag == "--unscoped":
+        out["unscoped"] = True
+        continue
+    if not args:
+        sys.exit(f"error: client-key {verb}: {flag} needs a value")
+    value = args.pop(0)
+    if flag in ("--label", "--hash"):
+        out[flag[2:]] = value
+    else:
+        names = [n.strip() for n in value.split(",")]
+        if not all(names):
+            sys.exit(f"error: {flag}: a comma-separated list of names, none empty")
+        out[flag[2:]] = names
+if not out.get("label"):
+    sys.exit(f"error: client-key {verb} needs --label L")
+if verb == "scope":
+    scoped = [k for k in ("profiles", "policies", "operations") if k in out]
+    if out.get("unscoped") and scoped:
+        sys.exit("error: client-key scope: --unscoped OR scope flags, not both")
+    if not out.get("unscoped") and not scoped:
+        sys.exit("error: client-key scope needs --profiles/--policies/--operations, or --unscoped")
+print(json.dumps(out))
+PY
+    }
+    _ck_label() { python3 -c 'import json,sys,urllib.parse; print(urllib.parse.quote(json.loads(sys.argv[1])["label"], safe=""))' "$1"; }
+    _CK_SHOWN_PY="$(cat <<'PY'
+import json, sys
+verb, d = sys.argv[1], json.load(sys.stdin)
+scope = {k: d[k] for k in ("profiles", "policies", "operations") if k in d}
+if not scope:
+    may = "every profile and every operation"
+else:
+    acts = scope.get("profiles", []) + [f"the profiles of policy {p}" for p in scope.get("policies", [])]
+    may = (", ".join(acts) or "no profile") + "  (operations: " + (", ".join(scope.get("operations", [])) or "none") + ")"
+done = "Created" if verb == "create" else "Rotated"
+print(f'{done} the client key "{d["label"]}".  It may act as: {may}.'
+      + ("  It may manage keys." if d.get("manages_keys") else ""))
+for w in d.get("warnings") or []:
+    print(f"warning: {w}", file=sys.stderr)
+if verb == "rotate":
+    print("The old key stopped working now.")
+if "key" in d:
+    print()
+    print(f'{d["key"]}   <- give this to its holder; shown once, never stored')
+else:
+    print(f'Its hash is now {d["hash"]} — the key you made.')
+PY
+)"
+    _ck_shown() {  # VERB RESPONSE_JSON -> the key, once, with what it may do
+      printf '%s' "$2" | python3 -c "$_CK_SHOWN_PY" "$1"
+    }
+    case "$verb" in
+      create)
+        body="$(_ck_args create "${args[@]+"${args[@]}"}")" || exit 2
+        out="$(_req POST "$CK" -H "Content-Type: application/json" --data "$body")" || exit 1
+        _ck_shown create "$out" ;;
+      rotate)
+        body="$(_ck_args rotate "${args[@]+"${args[@]}"}")" || exit 2
+        hash="$(python3 -c 'import json,sys; d=json.load(sys.stdin); print(json.dumps({"hash": d["hash"]}) if "hash" in d else "")' <<<"$body")"
+        if [[ -n "$hash" ]]; then
+          out="$(_req POST "$CK/$(_ck_label "$body")/rotate" -H "Content-Type: application/json" --data "$hash")" || exit 1
+        else
+          out="$(_req POST "$CK/$(_ck_label "$body")/rotate")" || exit 1
+        fi
+        _ck_shown rotate "$out" ;;
+      revoke)
+        body="$(_ck_args revoke "${args[@]+"${args[@]}"}")" || exit 2
+        _req DELETE "$CK/$(_ck_label "$body")" ;;
+      scope)
+        body="$(_ck_args scope "${args[@]+"${args[@]}"}")" || exit 2
+        scope="$(python3 -c 'import json,sys; d=json.loads(sys.argv[1]); print(json.dumps({k: d[k] for k in ("profiles","policies","operations") if k in d}))' "$body")"
+        _req PUT "$CK/$(_ck_label "$body")/scope" -H "Content-Type: application/json" --data "$scope" ;;
+      list)
+        raw=""
+        for a in "${args[@]+"${args[@]}"}"; do
+          case "$a" in --json) raw=1 ;; *) echo "error: client-key list [--json]" >&2; exit 2 ;; esac
+        done
+        tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
+        _get_to_file "$CK" "$tmp"
+        if [[ -n "$raw" ]]; then _fmt <"$tmp"
+        else python3 - "$tmp" <<'PY'
+import json, sys
+keys = json.load(open(sys.argv[1]))["keys"]
+rows = [("LABEL", "MANAGES", "PROFILES", "POLICIES", "OPERATIONS")]
+for k in keys:
+    scoped = any(f in k for f in ("profiles", "policies", "operations"))
+    cell = lambda f: ", ".join(k[f]) if f in k else ("-" if scoped else "(all)")
+    rows.append((k["label"], "yes" if k.get("manages_keys") else "",
+                 cell("profiles"), cell("policies"), cell("operations")))
+w = [max(len(r[i]) for r in rows) for i in range(len(rows[0]))]
+for r in rows:
+    print("  ".join(r[i].ljust(w[i]) for i in range(len(r))).rstrip())
+PY
+        fi ;;
+      download)
+        out="client-keys.yaml"; i=0
+        while [[ $i -lt ${#args[@]} ]]; do
+          case "${args[$i]}" in
+            --out) out="${args[$((i+1))]:-}"; i=$((i+2))
+                   [[ -z "$out" ]] && { echo "error: client-key download [--out FILE]" >&2; exit 2; } ;;
+            *)     echo "error: client-key download [--out FILE]" >&2; exit 2 ;;
+          esac
+        done
+        tmp="$(mktemp)"
+        code="$(_curl -o "$tmp" -w '%{http_code}' "$CK/export")"
+        if [[ "$code" =~ ^2[0-9][0-9]$ ]]; then mv "$tmp" "$out"; echo "downloaded the client keys -> $out" >&2
+        else echo "error (HTTP $code): $(cat "$tmp")" >&2; rm -f "$tmp"; exit 1; fi ;;
+      upload)
+        file="${args[0]:-}"
+        [[ -z "$file" || ! -f "$file" || ${#args[@]} -ne 1 ]] && { echo "error: client-key upload FILE" >&2; exit 2; }
+        _req POST "$CK/import" -H "Content-Type: application/x-yaml" --data-binary "@$file" ;;
+      *) echo "$ck_usage" >&2; exit 2 ;;
     esac ;;
 
   ingest)

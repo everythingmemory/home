@@ -115,6 +115,6 @@ The [archive](../durability/index.md) is not a service. The API service and the 
 | `/api/v1/sync/` | The exchange between peers |
 | `/health` | The engine's health: `healthy`, or `degraded` when the database is unreachable, or when the embedding width is not declared, cannot be read, or differs from the width of a vector the endpoint returned. |
 
-`e.sh` is a command-line script over the REST API, for agent profiles, lanes, policies, records, edge properties, peers, ingesting files, bundle export and import, and creating client keys (`client-key create`) and first setup (`init`), which run on the machine without calling the engine.
+`e.sh` is a command-line script over the REST API, for agent profiles, lanes, policies, records, edge properties, peers, ingesting files, bundle export and import, and managing client keys (`client-key`), and first setup (`init`), which runs on the machine without calling the engine.
 
 See [configuration](../configuration/index.md) for every setting.
