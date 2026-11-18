@@ -23,7 +23,8 @@ One setting, PIPELINE_PROFILE, chooses which component lists the engine runs for
 
 The question search runs tags and edge properties, full text, record vectors and window vectors, merged. See [search](../../agents-how-to/finding-records.md).
 
-- The block lists, per pipeline, its components in the order they run. A key named after a component holds that component's settings, one set for every pipeline (for example `slice_page: {page_size: 30}`, the default page of `e_gather` and `e_timeline`).
+- The block lists, per pipeline, its components in the order they run. A key named after a component holds that component's settings, one set for every pipeline (for example `slice_page: {page_size: 30}`, the default page of `e_gather`).
+- The timeline pipelines page with `slice_page_chars`: at most `page_size` entries (20), at most `max_chars` characters of previews and properties (8000), and previews of at most `preview_chars` characters (240). A page holds at least one entry. Before loading records they run `scope_filter`, which keeps the records of the asked `source_type` and `author` and does nothing when neither is given. The `lane` argument narrows the lanes the pipeline reads, so it needs no component.
 - `ingest` runs its components one after another; a record that fails validation goes no further.
 - `gather_find` runs its retrievers at once, then the rest in order.
 - Switching to a profile with other extract plugins changes the tag version, so every record's tags are derived again, once.

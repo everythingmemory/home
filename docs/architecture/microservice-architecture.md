@@ -95,7 +95,7 @@ The [archive](../durability/index.md) is not a service. The API service and the 
 | Service | Container | What it is | Holds or does |
 |---|---|---|---|
 | Console | `console` | Web interface and its backend, one Node process | Holds the engine client key server-side in the sign-in session and passes `/api` to the API service. Published to this machine only |
-| Folder Intake | `folder-intake` | Its own compose file (`docker-compose.folder.yml`) | Watches a folder on this machine, mounted read-only, and writes its files to the API service. See [documents and files](../use-cases/beyond-the-context-window.md#documents-and-files) |
+| Folder Intake | `folder-intake` | Its own compose file (`intake/docker-compose.yml`) | Watches a folder on this machine, mounted read-only, and writes its files to the API service. See [documents and files](../use-cases/beyond-the-context-window.md#documents-and-files) |
 
 ## Overlays
 

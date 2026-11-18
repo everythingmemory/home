@@ -16,16 +16,16 @@ profile_v1:
   # e_timeline list, intersect and traverse; the question's dates are read by chrono.
   timeline:
     components: [temporal_parse_v2, tag_temporal_resolve, tag_temporal_shed,
-                 load_srs_with_tags, tag_temporal_order, slice_page, format_output]
+                 scope_filter, load_srs_with_tags, tag_temporal_order, slice_page_chars, format_output]
   # The same, with is_conversational_only.
   timeline_conversational:
     components: [temporal_parse_v2, tag_temporal_resolve, tag_temporal_shed,
-                 discourse_filter, load_srs_with_tags, tag_temporal_order, slice_page, format_output]
+                 discourse_filter, scope_filter, load_srs_with_tags, tag_temporal_order, slice_page_chars, format_output]
   # e_timeline find.
   timeline_find:
     components: [tokenize_query, tag_property_retrieve, tsquery_retrieve, semantic,
                  window_semantic, window_expand, true_distance_balanced_dedup,
-                 load_srs_with_tags, tag_temporal_order, slice_page, format_output]
+                 scope_filter, load_srs_with_tags, tag_temporal_order, slice_page_chars, format_output]
 
   tag_property_retrieve:
     max_candidates: 200
@@ -44,5 +44,9 @@ profile_v1:
     ceiling: 200
   slice_page:
     page_size: 30
+  slice_page_chars:
+    page_size: 20
+    max_chars: 8000
+    preview_chars: 240
   format_output:
     attribution_detail: 5

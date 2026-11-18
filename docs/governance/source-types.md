@@ -67,8 +67,10 @@ An agent writes a meeting with a label the type does not allow:
 e_ingest {"content": "Renewal call with Acme.", "source_type": "meeting", "assign_lane": "crm", "properties": ["org:Acme", "budget:120k"]}
 ```
 
-```json
-{"error": "label(s) ['budget'] not allowed for source_type 'meeting' in lane 'crm'; allowed: ['org', 'person', 'topic']"}
+The call is refused with this message (over MCP an error result, `isError`; over REST the body `{"error": "…"}`):
+
+```text
+label(s) ['budget'] not allowed for source_type 'meeting' in lane 'crm'; allowed: ['org', 'person', 'topic']
 ```
 
 Other refusals name what is allowed in the same way:

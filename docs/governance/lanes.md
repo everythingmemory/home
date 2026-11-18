@@ -47,8 +47,10 @@ Writes land in the agent profile's `home_lane` by default (`assign_lane` to writ
 e_ingest {"content": "Acme signed the renewal on 2026-10-05.", "source_type": "contract", "assign_lane": "accounts", "agent_profile": "support"}
 ```
 
-```json
-{"error": "agent_profile cannot write to lane 'accounts'; writable: ['notes']"}
+The call is refused with this message (over MCP an error result, `isError`; over REST the body `{"error": "…"}`):
+
+```text
+agent_profile cannot write to lane 'accounts'; writable: ['notes']
 ```
 
 ## Reference

@@ -104,13 +104,17 @@
 #   client-key upload FILE                send the edited list back: it changes scope only (create adds a
 #                                         key, rotate a hash, revoke removes one), all or nothing
 #                                         Every client-key verb needs an UNSCOPED key (admin is not enough)
-#   init [--archive-dir PATH]             first setup, on this machine: write .env from .env.example with
-#                                         fresh passwords and the archive key, make the archive folder
+#   init [--name NAME] [--archive-dir PATH]
+#                                         first setup, on this machine: write .env from .env.example with
+#                                         the stack's name (COMPOSE_PROJECT_NAME: NAME, or this folder's
+#                                         name), fresh passwords and the archive key, make the archive folder
 #                                         (default $HOME/ememory-data/archive) and name it as ARCHIVE_DIR,
 #                                         and mint the first client key, `client` (unscoped): its hash goes
 #                                         in SEED_KEY_HASHES, read when the engine first starts with no
-#                                         keys. Refuses when .env exists. Prints ARCHIVE_KEY and the client
-#                                         key, once each. Runs here: no --url, no engine call
+#                                         keys. Lists the stacks already on this Docker with their host
+#                                         ports, and warns when one has this name. Refuses when .env exists.
+#                                         Prints ARCHIVE_KEY and the client key, once each. Runs here: no
+#                                         --url, no engine call
 #
 # Policy is an event-sourced ledger: download ONE source policy -> edit -> policy
 # upload (genesis-then-edit on its uuid; uuids are carried for lineage). `catalog`
@@ -152,14 +156,23 @@ if [[ "$noun" == "init" ]]; then
   ENV_FILE="$HERE/.env"
   EXAMPLE="$HERE/.env.example"
   ARCHIVE="$HOME/ememory-data/archive"
+  NAME=""
   set -- "${REST[@]:1}"
   while [[ $# -gt 0 ]]; do
     case "$1" in
+      --name) [[ $# -ge 2 && -n "$2" ]] || { echo "error: init: --name needs a name" >&2; exit 2; }
+              NAME="$2"; shift 2 ;;
       --archive-dir) [[ $# -ge 2 ]] || { echo "error: init: --archive-dir needs a path" >&2; exit 2; }
                      ARCHIVE="$2"; shift 2 ;;
-      *) echo "error: init [--archive-dir PATH] - unknown argument '$1'" >&2; exit 2 ;;
+      *) echo "error: init [--name NAME] [--archive-dir PATH] - unknown argument '$1'" >&2; exit 2 ;;
     esac
   done
+  if [[ -z "$NAME" ]]; then
+    NAME="$(printf '%s\n' "${HERE##*/}" | awk '{ s = tolower($0); gsub(/[^a-z0-9_-]/, "", s); sub(/^[-_]+/, "", s); print s }')"
+    [[ -n "$NAME" ]] || { echo "error: init: this folder's name gives no stack name - pass --name NAME" >&2; exit 2; }
+  fi
+  [[ "$NAME" =~ ^[a-z0-9][a-z0-9_-]*$ ]] ||
+    { echo "error: init: --name must be lower-case letters, digits, - and _, starting with a letter or digit (got '$NAME')" >&2; exit 2; }
   if [[ -e "$ENV_FILE" || -L "$ENV_FILE" ]]; then
     echo "error: $ENV_FILE already exists - init writes a new one and never overwrites. Edit it, or move it away and run init again." >&2
     exit 2
@@ -205,6 +218,7 @@ if [[ "$noun" == "init" ]]; then
       { echo "error: init: .env.example must hold exactly one '$1=' line" >&2; exit 2; }
     mv "$TMP_ENV.next" "$TMP_ENV"
   }
+  _set COMPOSE_PROJECT_NAME "$NAME"
   _set POSTGRES_PASSWORD "$(_hex 24)"
   _set REDIS_PASSWORD "$(_hex 24)"
   _set ARCHIVE_KEY "$ARCHIVE_KEY_VALUE"
@@ -214,8 +228,8 @@ if [[ "$noun" == "init" ]]; then
   chmod 600 "$TMP_ENV"
   [[ -e "$ENV_FILE" || -L "$ENV_FILE" ]] && { echo "error: $ENV_FILE appeared while init ran; left it alone" >&2; exit 2; }
   mv "$TMP_ENV" "$ENV_FILE"
-  echo "Wrote $ENV_FILE: fresh POSTGRES_PASSWORD, REDIS_PASSWORD and ARCHIVE_KEY,"
-  echo "ARCHIVE_DIR=$ARCHIVE (made), and SEED_KEY_HASHES with the first client key, client."
+  echo "Wrote $ENV_FILE: COMPOSE_PROJECT_NAME=$NAME, fresh POSTGRES_PASSWORD, REDIS_PASSWORD"
+  echo "and ARCHIVE_KEY, ARCHIVE_DIR=$ARCHIVE (made), and SEED_KEY_HASHES with the first client key, client."
   echo
   echo "Save ARCHIVE_KEY in your password manager now — a lost key is an unreadable archive:"
   echo
@@ -226,6 +240,25 @@ if [[ "$noun" == "init" ]]; then
   echo
   echo "$CLIENT_KEY"
   echo
+  if command -v docker >/dev/null 2>&1; then
+    STACKS="$(docker compose ls --all -q 2>/dev/null || true)"
+    if [[ -n "$STACKS" ]]; then
+      echo "Stacks already on this Docker (host ports):"
+      while IFS= read -r other; do
+        [[ -n "$other" ]] || continue
+        PORTS="$(docker ps -a --filter "label=com.docker.compose.project=$other" --format '{{.Ports}}' 2>/dev/null |
+          awk '{ n = split($0, p, /, */); for (i = 1; i <= n; i++) { a = index(p[i], "->"); if (a > 1) { h = substr(p[i], 1, a - 1); if (!(h in seen)) { seen[h]; out = out (out == "" ? "" : ", ") h } } } } END { print out }' || true)"
+        echo "  $other${PORTS:+: $PORTS}"
+      done <<< "$STACKS"
+      echo
+      if [[ $'\n'"$STACKS"$'\n' == *$'\n'"$NAME"$'\n'* ]]; then
+        echo "warning: a stack named '$NAME' is already on this Docker. Two installs with one name" >&2
+        echo "share their containers and their database: unless it is this one, give this one another" >&2
+        echo "name (COMPOSE_PROJECT_NAME in .env) before you start it." >&2
+        echo >&2
+      fi
+    fi
+  fi
   echo "Next:"
   echo "  docker compose up -d"
   echo "  To turn auth on: AUTH_ENABLED=true in .env; then ./e.sh client-key create makes more keys"

@@ -26,10 +26,10 @@ A bundle names the engine that made it.
 
 ## The bundle tool
 
-Bundles are written and read by the engine; a small tool on your side carries the file to and from it, encrypting and decrypting on your machine. It is part of eMemory's command-line image, so nothing is installed but the container engine you already run the stack with. Run it from the folder that holds (or will hold) the bundle file; it joins the stack's network (`ememory` unless you set `EMEMORY_NETWORK`) and reaches the engine by its service name:
+Bundles are written and read by the engine; a small tool on your side carries the file to and from it, encrypting and decrypting on your machine. It is part of eMemory's command-line image, so nothing is installed but the container engine you already run the stack with. Run it from the folder that holds (or will hold) the bundle file; it joins the stack's network (`<stack name>_ememory`, where the stack's name is `COMPOSE_PROJECT_NAME` in `.env`, unless you set `EMEMORY_NETWORK`) and reaches the engine by its service name:
 
 ```bash
-docker run --rm -it --network ememory -v "$PWD":/work \
+docker run --rm -it --network <stack name>_ememory -v "$PWD":/work \
   -e EMEMORY_URL=http://ememory-api:8765 -e EMEMORY_API_KEY=<client key> \
   ghcr.io/everythingmemory/cli bundle <export|import> …
 ```

@@ -31,13 +31,13 @@ Three things, kept apart from one another:
 | Backup | What it is | Without it |
 |---|---|---|
 | The archive | The `ARCHIVE_DIR` folder, or the external bucket | No rebuild after the database is lost |
-| The database's key volume (`ememory_tde_keys`) | The key that encrypts the database at rest | The database's files cannot be read |
+| The database's key volume (`<stack name>_ememory_tde_keys`) | The key that encrypts the database at rest | The database's files cannot be read |
 | The archive encryption key | `ARCHIVE_KEY` in `.env` | The archive's objects cannot be read |
 
-Volume names carry the compose project's prefix; list them with `docker volume ls`. One way to copy a volume to a file:
+Volume names start with the stack's name (`COMPOSE_PROJECT_NAME` in `.env`); list them with `docker volume ls`. One way to copy a volume to a file:
 
 ```bash
-docker run --rm -v <project>_ememory_tde_keys:/v:ro -v "$PWD":/b alpine tar czf /b/tde_keys.tgz -C /v .
+docker run --rm -v <stack name>_ememory_tde_keys:/v:ro -v "$PWD":/b alpine tar czf /b/tde_keys.tgz -C /v .
 ```
 
 Keep `.env` (and `gateway.env`, if used) with the backups: it holds the database password and the archive keys. The client key hashes are in the archive.

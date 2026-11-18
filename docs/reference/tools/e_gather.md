@@ -37,7 +37,7 @@ Actions:
 
 ## Refusals
 
-A refusal is returned as `{"error": "…"}`. These are the ones this tool raises itself; `…` stands for a value filled in at the time.
+Over MCP a refusal arrives as an error result (`isError`) whose text is the message; over REST the body is `{"error": "…"}`. These are the ones this tool raises itself; `…` stands for a value filled in at the time.
 
 | Text |
 |---|

@@ -28,7 +28,7 @@ Before writing to a lane, an agent can ask what it may write there: `e_system` `
 {"sr_id": "sr_7b22e4d1a90c3f5812ab94c6e0d3f7a1", "status": "accepted", "content_hash": "…", "ingested_at": "2026-10-30T15:02:11Z"}
 ```
 
-The edge properties are on the record when the call returns. The extractor plugins and the embedding run afterwards, in the background. A refusal is `{"error": "…"}` and names what is allowed: a lane the agent profile can write, a source type the lane accepts, or a label the source type allows.
+The edge properties are on the record when the call returns. The extractor plugins and the embedding run afterwards, in the background. A refusal names what is allowed: a lane the agent profile can write, a source type the lane accepts, or a label the source type allows. Over MCP it arrives as an error result (`isError`) whose text is the message; over REST the body is `{"error": "…"}`.
 
 ## Example
 ```text

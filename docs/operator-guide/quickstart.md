@@ -59,7 +59,7 @@ From nothing to an agent storing and finding a record, on one machine, in eleven
    ./e.sh init
    ```
 
-   This writes `.env`, the stack's one settings file, from `.env.example`, with its passwords and the archive key generated (see [the settings it writes](#the-settings-init-writes)). It makes the archive folder, `$HOME/ememory-data/archive`, and names it as `ARCHIVE_DIR`; to put the archive elsewhere, pass `--archive-dir` with an absolute path. It also mints the first client key, `client`, with no scope: it prints the key once and writes only its hash, to `SEED_KEY_HASHES`, which the engine reads when it first starts with no keys. It never overwrites an existing `.env`.
+   This writes `.env`, the stack's one settings file, from `.env.example`, with the stack's name, its passwords and the archive key (see [the settings it writes](#the-settings-init-writes)). The name is this folder's (lower-cased, with only letters, digits, `-` and `_` kept); to give another, pass `--name`. `init` lists the stacks already on this machine's Docker, stopped ones too, with the host ports they publish, and warns if one has this name: two installs with one name share their containers and their database. It makes the archive folder, `$HOME/ememory-data/archive`, and names it as `ARCHIVE_DIR`; to put the archive elsewhere, pass `--archive-dir` with an absolute path. It also mints the first client key, `client`, with no scope: it prints the key once and writes only its hash, to `SEED_KEY_HASHES`, which the engine reads when it first starts with no keys. It never overwrites an existing `.env`.
 
    The archive folder survives `docker compose down -v`, and you back it up and move it with your own tools. On macOS with Docker Desktop, keep it under your home folder, which Docker Desktop shares by default.
 
@@ -75,7 +75,7 @@ From nothing to an agent storing and finding a record, on one machine, in eleven
 
    A required setting that is missing stops the start and is named. Most are named by `docker compose up` itself. `ARCHIVE_KEY`, and an `ARCHIVE_DIR` that is not an absolute path, are checked when the engine starts: `up` reports that `ememory-api` is not healthy, the workers do not start, and `docker compose logs ememory-api` names the setting.
 
-   Another eMemory stack already running on this machine? Give this one its own project name and ports: set `EMEMORY_PORT`, `CONSOLE_PORT` and `EMEMORY_NETWORK` in `.env` (see [workers and schedule](../configuration/workers.md)) and start it with `docker compose -p <name> up -d`.
+   Another eMemory stack already running on this machine? Each stack has its own name and its own Docker network, so their services never answer each other. Give this one its own ports too: set `EMEMORY_PORT` and `CONSOLE_PORT` in `.env` (see [workers and schedule](../configuration/workers.md)).
 
 6. **Check health.**
 
@@ -137,6 +137,7 @@ From nothing to an agent storing and finding a record, on one machine, in eleven
 
 | Setting | What it is | Format |
 |---|---|---|
+| `COMPOSE_PROJECT_NAME` | The stack's name. Docker Compose names the stack's containers, its database volume and its network after it, and `docker compose up` refuses to start without it. `init` writes this folder's name, or the one given with `--name` | Lower-case letters, digits, `-` and `_`, starting with a letter or digit |
 | `POSTGRES_PASSWORD` | The database's password. Fixed into the database volume the first time the stack starts | Letters and digits; `init` writes 48 hex characters (`openssl rand -hex 24`) |
 | `REDIS_PASSWORD` | The job queue's password, carried by the engine and every worker | Letters and digits; `init` writes 48 hex characters (`openssl rand -hex 24`). A quote or backslash breaks the queue password, so do not add one by hand |
 | `ARCHIVE_KEY` | The key every archive object is encrypted with (AES-256-GCM). Keep it in a password manager, apart from the archive | **Required:** 32 random bytes, base64-encoded (`openssl rand -base64 32`) |

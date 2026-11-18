@@ -50,7 +50,9 @@ case "$cmd" in
 save)
     [ $# -gt 0 ] || set -- -f docker-compose.yml
     mkdir -p "$bundle"
-    docker compose "$@" config --format json | python3 -c "
+    INTAKE_NAME="${INTAKE_NAME:-offline-images-unused}" \
+    EMEMORY_NETWORK="${EMEMORY_NETWORK:-offline-images-unused}" \
+        docker compose "$@" config --format json | python3 -c "
 import json, sys
 for name, svc in sorted(json.load(sys.stdin)['services'].items()):
     print(name, svc['image'])" >"$bundle/.services"

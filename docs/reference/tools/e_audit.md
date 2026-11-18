@@ -8,7 +8,7 @@ Provenance trail — the event spine's reader.
 
 This is the description the engine gives an agent for this tool, word for word.
 
-Provenance trail — the event spine's reader. Every mutation (ingest, sync arrival, correction attach/unattach/retract, adjustment, property add/remove, delete) writes an immutable event; this tool reads them back. Read-only, scoped to your readable lanes.
+Provenance trail — the event spine's reader. Every mutation (ingest, sync arrival, correction create/retract, adjustment, property add/remove, delete) writes an immutable event; this tool reads them back. Read-only, scoped to your readable lanes.
 
 Actions:
 - `trace` — `sr_id`: every event touching that SR, oldest first. Works after deletion (the trail outlives the data). Add `expand=true` for a self-contained evidence package: the SR (or its deletion record), full correction views, adjustment clusters — no follow-up calls needed.
@@ -43,7 +43,7 @@ Use `trace` to answer "why does memory say this?" mechanically: what was ingeste
 
 ## Refusals
 
-A refusal is returned as `{"error": "…"}`. These are the ones this tool raises itself; `…` stands for a value filled in at the time.
+Over MCP a refusal arrives as an error result (`isError`) whose text is the message; over REST the body is `{"error": "…"}`. These are the ones this tool raises itself; `…` stands for a value filled in at the time.
 
 | Text |
 |---|

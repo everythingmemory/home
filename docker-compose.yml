@@ -37,9 +37,16 @@
 # The database, the queue and the plugins publish nothing — the engine reaches
 # them by service name on this stack's own network.
 
+# THE STACK'S NAME IS REQUIRED: compose names every container, the
+# database volume and the network after it, and `up` refuses without it — a
+# missing name would otherwise fall back to the folder's. `./e.sh init` writes
+# it into .env as COMPOSE_PROJECT_NAME; `-p NAME` on the command line overrides
+# it. Two installs given one name share their containers and their database.
+name: ${COMPOSE_PROJECT_NAME:?COMPOSE_PROJECT_NAME is required - set it in .env to the name this stack already runs under (see docker compose ls --all), as a different name starts on new, empty volumes; for a new install run ./e.sh init}
+
 services:
   ememory-api:
-    image: ghcr.io/everythingmemory/core:1.2.23@sha256:ce24f7db4531ca872a4051bb9915cf9c3036d2aaa7c8eb4821d01c86e6fa57f3
+    image: ghcr.io/everythingmemory/core:1.2.25@sha256:5cd66aea83d9cae3289561e8440e2a6cf46abb914bfe43329a9c23f3a90addce
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
     # the archive (47,934 records, 2026-10-14). A runaway is killed and
@@ -295,7 +302,7 @@ services:
   # conf/gateway.yaml routes EMBEDDING_MODEL=nomic-embed-text to it. It
   # publishes nothing; the gateway reaches it by service name.
   local-embed:
-    image: ghcr.io/everythingmemory/local-embed:1.2.23@sha256:74a9edda92d8e768f2528fec95398238839140f9bde2137583a32462c2c11c76
+    image: ghcr.io/everythingmemory/local-embed:1.2.25@sha256:568b48286ce1478d81a97c18e179fff02ca100f595aff7e7f674f0aa7d7470e3
     restart: unless-stopped
     # The model is 146 MB. Measured 2026-10-30: 81 MiB after the same burst
     # through the gateway. The ceiling is generous until measured on a corpus.
@@ -321,7 +328,7 @@ services:
   console:
     # Built in the console's own repository; pinned here with the rest by
     # scripts/pin-images.sh. Bump only in an upgrade cycle.
-    image: ghcr.io/everythingmemory/console:1.2.23@sha256:f342377efc6b9513bb8479f710dcd4c32f5b81b1e6f7aec8199c52a109653e08
+    image: ghcr.io/everythingmemory/console:1.2.25@sha256:9becdb8ff6c78c31603d609f00ab30b5368192acca73d9fddb152ee4b2ff0f13
     restart: unless-stopped
     # Started after the engine's container exists, so the `ememory-api` name
     # resolves when the console first looks; the engine being ready is not
@@ -353,7 +360,7 @@ services:
     # no wget or curl for one written here to call.
 
   ememory-worker:
-    image: ghcr.io/everythingmemory/core:1.2.23@sha256:ce24f7db4531ca872a4051bb9915cf9c3036d2aaa7c8eb4821d01c86e6fa57f3
+    image: ghcr.io/everythingmemory/core:1.2.25@sha256:5cd66aea83d9cae3289561e8440e2a6cf46abb914bfe43329a9c23f3a90addce
     entrypoint: ["python", "-m", "arq", "core.worker.WorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
@@ -413,7 +420,7 @@ services:
   # hour. Same image, same mounts, same env as ememory-worker — only the arq
   # settings class and the concurrency differ.
   ememory-worker-archive:
-    image: ghcr.io/everythingmemory/core:1.2.23@sha256:ce24f7db4531ca872a4051bb9915cf9c3036d2aaa7c8eb4821d01c86e6fa57f3
+    image: ghcr.io/everythingmemory/core:1.2.25@sha256:5cd66aea83d9cae3289561e8440e2a6cf46abb914bfe43329a9c23f3a90addce
     entrypoint: ["python", "-m", "arq", "core.worker.ArchiveWorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
@@ -475,7 +482,7 @@ services:
   # the other two. It is the ONLY worker that runs task_derive_tags, so the
   # tag index is not filled without it.
   ememory-worker-maintenance:
-    image: ghcr.io/everythingmemory/core:1.2.23@sha256:ce24f7db4531ca872a4051bb9915cf9c3036d2aaa7c8eb4821d01c86e6fa57f3
+    image: ghcr.io/everythingmemory/core:1.2.25@sha256:5cd66aea83d9cae3289561e8440e2a6cf46abb914bfe43329a9c23f3a90addce
     entrypoint: ["python", "-m", "arq", "core.worker.MaintenanceWorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
@@ -535,7 +542,7 @@ services:
   # ememory-worker did. It is the ONLY worker that runs task_ingest, so an
   # asynchronous ingest is not extracted or embedded without it.
   ememory-worker-ingest:
-    image: ghcr.io/everythingmemory/core:1.2.23@sha256:ce24f7db4531ca872a4051bb9915cf9c3036d2aaa7c8eb4821d01c86e6fa57f3
+    image: ghcr.io/everythingmemory/core:1.2.25@sha256:5cd66aea83d9cae3289561e8440e2a6cf46abb914bfe43329a9c23f3a90addce
     entrypoint: ["python", "-m", "arq", "core.worker.IngestWorkerSettings", "--custom-log-dict", "core.log_setup.arq_log_config"]
     restart: unless-stopped
     # Memory limit: ememory-worker's, which ran task_ingest until this worker
@@ -596,7 +603,7 @@ services:
   #their code stays in plugins/ as a menu option, run by adding
   # their services in an overlay of your own.
   chrono-engine:
-    image: ghcr.io/everythingmemory/chrono-engine:1.2.23@sha256:12dd9c5ee1e2e44aecd0f74f0c7dbc9df0a8a8cb465f735222c3d4248b5de6e1
+    image: ghcr.io/everythingmemory/chrono-engine:1.2.25@sha256:625be7083e7e18b2f1494ba9196be9dc10208a93f1546ee628ff2777e062c4ee
     restart: unless-stopped
     # A ceiling: a runaway kills this container and not a neighbour, and the
     # restart policy brings it back. Not yet measured.
@@ -615,7 +622,7 @@ services:
       start_period: 5s
 
   plugin-chrono:
-    image: ghcr.io/everythingmemory/plugin-chrono:1.2.23@sha256:6b5888cdef1e0c44b1db19f42c84b8df69e262cccfc8940a27ed681fc196ed04
+    image: ghcr.io/everythingmemory/plugin-chrono:1.2.25@sha256:8e4313d237a2c2cb1d5cb22a6f43ccda6535d757a2299768ea63ed3d07242e8c
     restart: unless-stopped
     # Not yet measured.
     mem_limit: 128m
@@ -638,7 +645,7 @@ services:
     command: ["uvicorn", "chrono_plugin.app:app", "--host", "0.0.0.0", "--port", "8000"]
 
   plugin-wordnet:
-    image: ghcr.io/everythingmemory/plugin-wordnet:1.2.23@sha256:ce9e8945e9fc43895dbb70eafbca3cb366cd073b3f3238c4a225788752fadd19
+    image: ghcr.io/everythingmemory/plugin-wordnet:1.2.25@sha256:8d09676ffffd088826fbfd4a9e27a4bbfbce2e094941bed078267690de24ba7a
     restart: unless-stopped
     # Memory limit: about twice this container's peak on a full rebuild from
     # the archive (47,934 records, 2026-10-14). A runaway is killed and
@@ -663,20 +670,23 @@ volumes:
   ememory_tde_keys:
     driver: local
 
-# TWO STACKS ON ONE MACHINE: give the second its own project name (`-p`), its
-# own EMEMORY_NETWORK, EMEMORY_PORT and CONSOLE_PORT. No container here has a
-# fixed name — compose names each one after its project — so two projects never
-# collide on a name. Images built with docker-compose.build.yml keep fixed
+# TWO STACKS ON ONE MACHINE: give the second its own name (COMPOSE_PROJECT_NAME)
+# and its own EMEMORY_PORT and CONSOLE_PORT. No container here has a fixed name
+# — compose names each one after its project — so two projects never collide on
+# a name. Images built with docker-compose.build.yml keep fixed
 # local tags (`everythingmemory_core`, …) shared by every stack on the
 # machine: never `--build` a different checkout beside a live stack — its
 # build retags the images the live one recreates from.
 #
-# THE STACK'S OWN NETWORK, NAMED. Every service rides the project's default
-# network, which compose creates and removes with the stack — a clean machine
-# needs nothing. It carries a fixed name (EMEMORY_NETWORK, default `ememory`)
-# so Folder Intake (docker-compose.folder.yml, its own project) can join it to
-# reach the engine; two stacks on one machine give it two names. Joining the
-# shared `estate` network instead is the overlay docker-compose.estate.yml.
+# THE STACK'S OWN NETWORK, NAMED AFTER THE STACK. Every service
+# rides the project's default network, which compose creates and removes with
+# the stack — a clean machine needs nothing. Its name is `<stack name>_ememory`,
+# so a service name (`ememory-postgres`, `gateway`, a plugin) answers only within
+# its own stack, and Folder Intake (intake/docker-compose.yml, its own project)
+# joins it by that name — given there as EMEMORY_NETWORK, which it requires — to
+# reach the engine. Here EMEMORY_NETWORK names another network
+# — set it only to join one on purpose. Joining the shared `estate` network
+# instead is the overlay docker-compose.estate.yml.
 networks:
   default:
-    name: ${EMEMORY_NETWORK:-ememory}
+    name: ${EMEMORY_NETWORK:-${COMPOSE_PROJECT_NAME}_ememory}

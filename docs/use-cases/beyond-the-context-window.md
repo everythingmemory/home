@@ -22,7 +22,7 @@ Not everything worth remembering arrives through a tool call. One command, `e.sh
 
 Each part carries the edge properties `file_path`, `folder`, `file_name`, `file_format` and `chunk_index`, plus `file_id`. `folder` is the part's subfolder within the ingested folder (`.` for a file at its top), so "everything in the subfolder Acme" is an intersection, not a guess.
 
-PDF, DOCX, HTML, XLSX, Markdown and plain text go in as the text they say — nothing summarised, nothing inferred. Every part carries where it came from, plus the lane and any edge properties you name that the lane allows. Rerunning ingests only what changed; a file that leaves the folder is reported and kept unless you ask for `--prune` (`--prune` deletes, so it needs `deletions_enabled` on). `--watch` runs the same pass on a loop, and the Folder Intake service (`folder-intake`, in `docker-compose.folder.yml`) runs it as a container watching one folder.
+PDF, DOCX, HTML, XLSX, Markdown and plain text go in as the text they say — nothing summarised, nothing inferred. Every part carries where it came from, plus the lane and any edge properties you name that the lane allows. Rerunning ingests only what changed; a file that leaves the folder is reported and kept unless you ask for `--prune` (`--prune` deletes, so it needs `deletions_enabled` on). `--watch` runs the same pass on a loop, and the Folder Intake service (`folder-intake`, in `intake/docker-compose.yml`) runs it as a container watching one folder.
 
 ```text
   eMemory ingest — /Users/you/Contracts

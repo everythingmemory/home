@@ -1,0 +1,75 @@
+# Copyright (c) 2026 ConcurAI
+# SPDX-License-Identifier: BUSL-1.1
+# Folder Intake — a folder on this machine, kept in eMemory.
+#
+# ITS OWN FOLDER, COMPOSE FILE AND PROJECT: start, stop and switch
+# folders without touching the running stack. Compose reads the .env of the
+# compose file's own folder, so this one reads intake/.env, never the stack's —
+# whose COMPOSE_PROJECT_NAME would otherwise put it inside the stack's project.
+# ONE EXCEPTION: a COMPOSE_PROJECT_NAME set in the SHELL (direnv,
+# `set -a; . .env`) beats the `name:` below, and this would run inside that
+# stack's project — where `--remove-orphans` takes the stack down. Unset it
+# first, or pass `-p intake-<name>`.
+# It joins the stack's network and posts to the engine by service name; it
+# publishes nothing and mounts the folder READ-ONLY.
+#
+# ITS SETTINGS ARE intake/.env (`cp intake/.env.example intake/.env`, then fill
+# it in); a value in the shell overrides the file's.
+#   INTAKE_NAME      required: the project is intake-<INTAKE_NAME> (`-p` still
+#                    overrides). One name per folder watched.
+#   EMEMORY_NETWORK  required, no default: the stack's network,
+#                    `<stack name>_ememory` (or the stack's own EMEMORY_NETWORK,
+#                    if it set one) — this file cannot guess which stack you
+#                    mean. `docker network ls` lists them.
+#   FOLDER           an ABSOLUTE path on this machine (default: `inbox` in the
+#                    directory you run compose from). It is mounted at the same
+#                    path inside the container, so a record names the file by
+#                    its real path, exactly as `./e.sh ingest` run on the host
+#                    would — and two folders never share a name.
+#   EMEMORY_API_KEY  a stack with AUTH_ENABLED=true needs a client key (one the
+#                    engine holds, ./e.sh client-key create). Unset, nothing is
+#                    sent — right for the auth-off default.
+#
+#   start watching:  docker compose -f intake/docker-compose.yml up -d
+#   stop:            docker compose -f intake/docker-compose.yml down
+#   switch folders:  stop, then start with another FOLDER; several at once, a
+#                    project each: INTAKE_NAME=b FOLDER=/abs/b docker compose -f intake/docker-compose.yml up -d
+#   one pass:        INTAKE_NAME=once FOLDER=/abs/path docker compose -f intake/docker-compose.yml run --rm folder-intake /abs/path
+#                    (only FOLDER is mounted, at its own path: the path given
+#                    to the run must be FOLDER)
+name: intake-${INTAKE_NAME:?INTAKE_NAME is required - set INTAKE_NAME=<folder> in intake/.env and the project becomes intake-<folder>}
+
+services:
+  folder-intake:
+    # Published to GHCR and pinned by scripts/pin-images.sh at a release;
+    # building it here instead is intake/docker-compose.build.yml.
+    image: ghcr.io/everythingmemory/folder-intake:1.2.25@sha256:42a3e6eee340ffa479f2fa530d7d74a8156340451ee558811a29c1cf542ad88b
+    restart: unless-stopped
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+    environment:
+      - EMEMORY_URL=http://ememory-api:8765
+      # Passed through as written, never defaulted; by env, never argv.
+      - EMEMORY_API_KEY=${EMEMORY_API_KEY}
+      # The profile it writes as. `folder_intake` is the shipped `files`
+      # policy's writer (install it first: `./e.sh policy install files`); its
+      # home lane `files` has the one `file: true` source type every record is
+      # written with. FOLDER_PROFILE names another — one whose home lane has
+      # exactly one `file: true` type.
+      - EMEMORY_PROFILE=${FOLDER_PROFILE:-folder_intake}
+    volumes:
+      - ${FOLDER:-${PWD}/inbox}:${FOLDER:-${PWD}/inbox}:ro
+    # The watching pass: the folder, rescanned every FOLDER_INTERVAL seconds
+    # (default 60). `run --rm folder-intake <path>` replaces this with one pass
+    # (<path> is FOLDER: the one folder mounted).
+    command: ["${FOLDER:-${PWD}/inbox}", "--watch", "--interval", "${FOLDER_INTERVAL:-60}"]
+    networks: [ememory]
+
+networks:
+  ememory:
+    name: ${EMEMORY_NETWORK:?EMEMORY_NETWORK is required - the network of the stack to post to, <stack name>_ememory (e.g. home_ememory); docker network ls lists them}
+    external: true
