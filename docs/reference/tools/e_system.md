@@ -34,11 +34,11 @@ Over MCP a refusal arrives as an error result (`isError`) whose text is the mess
 |---|
 | `Unhandled action '…'` |
 | `Invalid action '…'. Must be one of: …` |
-| `agent_profile is required for undelete` |
+| `undelete needs agent_profile, the name of an agent profile, as the deployment provides it` |
 | `agent_profile has no write lane` |
-| `sr_ids is required for undelete` |
-| `agent_profile is required for delete` |
-| `sr_ids is required for delete` |
-| `inspect requires agent_profile` |
-| `get_profile requires agent_profile` |
+| `undelete needs sr_ids, a list of sr_ids from e_gather or e_timeline` |
+| `delete needs agent_profile, the name of an agent profile, as the deployment provides it` |
+| `delete needs sr_ids, a list of sr_ids from e_gather or e_timeline` |
+| `inspect needs agent_profile, the name of an agent profile, as the deployment provides it` |
+| `get_profile needs agent_profile, the name of an agent profile, as the deployment provides it` |
 | `not_found` |

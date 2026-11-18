@@ -12,13 +12,15 @@ Find and gather evidence from the knowledge graph (scoped to your read authority
 
 Actions:
 - `find` — `query="..."`, ranked by semantic relevance.
-- `intersect` — `match=[...]`, AND (an SR must have all terms).
-- `union` — `match=[...]`, OR (any term).
+- `intersect` — `match=[...]`, AND (an SR must have all terms). Newest first.
+- `union` — `match=[...]`, OR (any term). Free-text terms: strongest match first; ties newest first.
 - `traverse` — `sr_id="..."`, walk shared-property and adjustment edges out from a known SR.
 - `count` — counts, never records. `match=["label:value", ...]` (exact terms only) → intersection `total` + per-term `ep_counts`; or `sr_id="..."` → per-property neighbor cardinality (`edges`) + `total_neighbors`. Size a result before fetching it.
 - `group` — board-shaped read: `by="label"` buckets that label's values with distinct-SR counts (optional exact-term `match` scope; `top=N` adds up to 5 sample sr_ids per bucket). Paged, counts only.
 
-`find` results carry `distance` (relative — *not* comparable across queries), `distance_quartile` (1 = best in this set — reason with this, not raw distance), and a page-level `distance_spread` (`tight` = results roughly equal, `moderate`, `huge` = sharp dropoff → trust quartile 1, paging likely returns noise). Results name their `lane` and `lane_uuid` and flag `has_correction` / `has_adjustment`. Use `e_gather find` for relevance-ordered results (`e_timeline find` for time-ordered), then `e_read` to load full detail before reasoning.
+Entries (`find`, `intersect`, `union`, `traverse`) carry `sr_id`, `lane`, `lane_uuid`, `source_type`, `version`, `author`, `ingested_at`, `properties`, a `preview`, `has_correction`/`has_adjustment` and `distance`. `full=true`: `content` (full text) replaces `preview`. Pages cap entries (`page_size`) and characters; `remaining` counts the rest; next page: `page` + 1.
+
+`find` entries' `distance` is relative — *not* comparable across queries; `distance_quartile` (1 = best in this set — reason with this, not raw distance); page-level `distance_spread` (`tight` = results roughly equal, `moderate`, `huge` = sharp dropoff → trust quartile 1, paging likely returns noise). Use `e_gather find` for relevance-ordered results (`e_timeline find` for time-ordered), then `e_read` to load full detail before reasoning.
 
 ## Arguments
 
@@ -33,6 +35,7 @@ Actions:
 | `top` | integer | `0` |
 | `page` | integer | `1` |
 | `page_size` | integer | — |
+| `full` | boolean | `false` |
 | `agent_profile` | string | — |
 
 ## Refusals

@@ -42,9 +42,9 @@ A `source_type` or `author` the engine's profile cannot apply is refused, never 
 When an `intersect` matches more than 200 records, the engine drops the term that matches the most records, and repeats until the set is 200 or fewer or one term is left; the set can stay above 200. Terms with the label `time` or `duration` are never dropped. The reply's `hint` names the terms kept and the terms dropped. Pass `shed_idf_noise: false` to keep every term. The 200 are counted across all lanes, before records in lanes the agent profile cannot read are removed.
 
 ## Response
-Each entry in `srs` carries its `sr_id`, `lane` and `lane_uuid`, `source_type`, `version`, `author` (the agent profile that first wrote the record), `ingested_at`, its `properties` as `e_read` lists them, a `preview` of its content of at most 240 characters, and the flags `has_correction` and `has_adjustment` where they apply. `e_read` gives the full content.
+Each entry in `srs` carries its `sr_id`, `lane` and `lane_uuid`, `source_type`, `version`, `author` (the agent profile that first wrote the record), `ingested_at`, its `properties` as `e_read` lists them, a `preview` of its content of at most 240 characters, and the flags `has_correction` and `has_adjustment` where they apply. `e_read` gives the full content; so does `full: true`, which puts the whole content in each entry as `content` in place of `preview`.
 
-A page holds at most 20 entries, or `page_size`, and at most 8,000 characters of previews and properties; one entry larger than that is a page by itself. The reply's `remaining` counts the entries after this page, and its `hint` gives the next call: the same arguments with `page` one higher. A page past the last returns no entries, and its `hint` names the last page.
+A page holds at most 20 entries, or `page_size`, and at most 8,000 characters of previews and properties, counted on the whole content when `full` is true; one entry larger than that is a page by itself, never cut. The reply's `remaining` counts the entries after this page, and its `hint` gives the next call: the same arguments with `page` one higher. A page past the last returns no entries, and its `hint` names the last page.
 
 Over MCP, `is_conversational_only: true` keeps only records marked as conversation, for `list`, `intersect` and `traverse`; the REST endpoint does not take it.
 

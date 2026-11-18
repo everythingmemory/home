@@ -35,9 +35,9 @@ Over MCP a refusal arrives as an error result (`isError`) whose text is the mess
 | Text |
 |---|
 | `agent_profile has no write authority over the correction's lane: …` |
-| `'content' is required for create action` |
-| `'sr_id' is required for create action: a correction names exactly one SR` |
-| `'correction_id' is required for retract action` |
+| `create needs content, the text, for example content: "Raj owns billing."` |
+| `create needs sr_id, an sr_id from e_gather or e_timeline` |
+| `retract needs correction_id, a correction_id from e_correct list` |
 | `Invalid action '…'. Must be one of: create, retract, inspect, list` |
 
 ## Actions
@@ -96,11 +96,10 @@ These come from the correction service the tool calls.
 
 | Text | Cause |
 |---|---|
-| `'sr_id' is required: a correction names exactly one SR.` | `create` was called without `sr_id` |
 | `sr_id '…' not found` | No live record has that id |
 | `Correction … not found` | No correction has that id |
 | `Correction … is already retracted` | `retract` was called twice |
-| `Provide correction_id or sr_id` | `inspect` was called with neither |
+| `inspect needs correction_id or sr_id, a correction_id from e_correct list or an sr_id from e_gather or e_timeline` | `inspect` was called with neither |
 | `page_size must be between 1 and …; received …` | `page_size` is outside the allowed range |
 
 ## Where a correction appears

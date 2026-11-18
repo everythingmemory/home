@@ -48,8 +48,8 @@ Over MCP a refusal arrives as an error result (`isError`) whose text is the mess
 | Text |
 |---|
 | `Invalid action '…'. Must be one of: trace, list, inspect, history` |
-| `'sr_id' is required for trace action` |
-| `'sr_id' is required for history action` |
+| `trace needs sr_id, an sr_id from e_gather or e_timeline` |
+| `history needs sr_id, an sr_id from e_gather or e_timeline` |
 | `history does not take …; it takes sr_id, as_of, page and page_size` |
 | `a page after the first needs as_of: pass back the as_of page 1 returned, so every page reads the same history` |
-| `'log_id' is required for inspect action` |
+| `inspect needs log_id, a log_id from e_audit list` |

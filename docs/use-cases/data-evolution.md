@@ -36,7 +36,7 @@ e_ingest {"content": "Acme's renewal moved to 1 April 2027 at Acme's request.", 
 Separately, the record said Sarah owns the renewal; John does. The agent writes a correction. A later search flags the original:
 
 ```json
-{"sr_id": "sr_7b22e4d1a90c3f5812ab94c6e0d3f7a1", "content": "Acme's renewal is due on 1 March 2027. Sarah owns it.", "has_correction": true, "has_adjustment": true}
+{"sr_id": "sr_7b22e4d1a90c3f5812ab94c6e0d3f7a1", "preview": "Acme's renewal is due on 1 March 2027. Sarah owns it.", "has_correction": true, "has_adjustment": true}
 ```
 
 `e_read` returns the record as written, its correction, and under `adjustments` the newer record. Here is the loop John's agent runs as Sarah's story unfolds: a correction that sticks, is shown with the original, and travels to every agent. Days later Mary asks her own agent — fresh context, no memory of the change. The same governed memory hands her the corrected record with its history, and her agent can offer to capture her input as an adjustment:

@@ -33,10 +33,10 @@ flowchart LR
   f --> m
   v --> m
   w --> m
-  m --> p["Pages of 30"]
+  m --> p["Pages of 20<br/>or 8,000 characters"]
 ```
 
-Tag, edge property and full-text candidates are given the cosine distance between the question's vector and the record's vector; a record with no vector yet gets the worst distance. Window candidates carry their window's distance. The four lists, each sorted by distance, are interleaved in the proportions 40:35:20:5 (record vector : tag or edge property : window : full text), without duplicates. Every candidate is kept, and pages are cut from the merged list. A page holds 30 records unless `page_size` says otherwise.
+Tag, edge property and full-text candidates are given the cosine distance between the question's vector and the record's vector; a record with no vector yet gets the worst distance. Window candidates carry their window's distance. The four lists, each sorted by distance, are interleaved in the proportions 40:35:20:5 (record vector : tag or edge property : window : full text), without duplicates. Every candidate is kept, and pages are cut from the merged list. A page holds at most 20 records, or `page_size`, and at most 8,000 characters of previews and properties.
 
 :::warning
 When the embeddings endpoint is not usable, the two vector lookups return nothing and `find` answers from tags, edge properties and full text alone. Their distances are then placeholders, not cosine distances. `/health` reports `degraded` while the gateway's model declaration cannot be read or does not match its vectors.

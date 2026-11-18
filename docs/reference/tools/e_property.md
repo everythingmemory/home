@@ -60,13 +60,13 @@ Over MCP a refusal arrives as an error result (`isError`) whose text is the mess
 | Text |
 |---|
 | `Invalid action '…'. Must be one of: …` |
-| `remove requires properties (['label:value', ...]) and/or labels (['label', ...])` |
-| `remove requires sr_id (string or list of strings)` |
+| `remove needs properties or labels, a list of label:value strings or a list of labels, for example properties: ["status:done"] or labels: ["status"]` |
+| `remove needs sr_id, an sr_id from e_gather or e_timeline` |
 | `agent_profile has no write lane` |
-| `add requires properties (list of 'label:value' strings)` |
-| `add requires sr_id (string or list of strings)` |
+| `add needs properties, a list of label:value strings, for example properties: ["status:done"]` |
+| `add needs sr_id, an sr_id from e_gather or e_timeline` |
 | `no writable records among … — not found: …, outside write authority: …. Nothing was written.` |
-| `find action requires term` |
+| `find needs term, a word to look for in labels and values, for example term: "billing"` |
 | `not found` |
-| `intersect action requires match` |
+| `intersect needs match, a list of label:value strings, for example match: ["status:assigned"]` |
 | `not writable: lane '…' is not in this agent_profile's write authority` |

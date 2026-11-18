@@ -71,23 +71,25 @@ Find and gather evidence from the knowledge graph (scoped to your read authority
 
 Actions:
 - `find` — `query="..."`, ranked by semantic relevance.
-- `intersect` — `match=[...]`, AND (an SR must have all terms).
-- `union` — `match=[...]`, OR (any term).
+- `intersect` — `match=[...]`, AND (an SR must have all terms). Newest first.
+- `union` — `match=[...]`, OR (any term). Free-text terms: strongest match first; ties newest first.
 - `traverse` — `sr_id="..."`, walk shared-property and adjustment edges out from a known SR.
 - `count` — counts, never records. `match=["label:value", ...]` (exact terms only) → intersection `total` + per-term `ep_counts`; or `sr_id="..."` → per-property neighbor cardinality (`edges`) + `total_neighbors`. Size a result before fetching it.
 - `group` — board-shaped read: `by="label"` buckets that label's values with distinct-SR counts (optional exact-term `match` scope; `top=N` adds up to 5 sample sr_ids per bucket). Paged, counts only.
 
-`find` results carry `distance` (relative — *not* comparable across queries), `distance_quartile` (1 = best in this set — reason with this, not raw distance), and a page-level `distance_spread` (`tight` = results roughly equal, `moderate`, `huge` = sharp dropoff → trust quartile 1, paging likely returns noise). Results name their `lane` and `lane_uuid` and flag `has_correction` / `has_adjustment`. Use `e_gather find` for relevance-ordered results (`e_timeline find` for time-ordered), then `e_read` to load full detail before reasoning.
+Entries (`find`, `intersect`, `union`, `traverse`) carry `sr_id`, `lane`, `lane_uuid`, `source_type`, `version`, `author`, `ingested_at`, `properties`, a `preview`, `has_correction`/`has_adjustment` and `distance`. `full=true`: `content` (full text) replaces `preview`. Pages cap entries (`page_size`) and characters; `remaining` counts the rest; next page: `page` + 1.
+
+`find` entries' `distance` is relative — *not* comparable across queries; `distance_quartile` (1 = best in this set — reason with this, not raw distance); page-level `distance_spread` (`tight` = results roughly equal, `moderate`, `huge` = sharp dropoff → trust quartile 1, paging likely returns noise). Use `e_gather find` for relevance-ordered results (`e_timeline find` for time-ordered), then `e_read` to load full detail before reasoning.
 
 ## e_timeline
 
 Retrieve knowledge ordered by time (scoped to your read authority).
 
-Actions: `list` (everything), `find` (`query="..."` semantic), `intersect` (`match=[...]` filter), `traverse` (from an anchor `sr_id`), `changes` (what changed between two moments). Bound the window of `list`, `intersect` and `traverse` with `start_date`/`end_date`; `find` takes no window (ranked by relevance, then time-ordered); `order_by` ∈ {`ingest_time_desc`, `ingest_time_asc`, `content_time_desc`, `content_time_asc`}. `shed_idf_noise` (default true) trims over-common terms from dense result sets.
+Actions: `list` (everything), `find` (`query="..."` semantic), `intersect` (`match=[...]` filter), `traverse` (from an anchor `sr_id`), `changes` (what changed between two moments). Bound the window of `list`, `intersect` and `traverse` with `start_date`/`end_date`; `find` takes no window (ranked by relevance, then time-ordered); `order_by` ∈ {`ingest_time_desc`, `ingest_time_asc`, `content_time_desc`, `content_time_asc`}. `shed_idf_noise` (default true) trims over-common terms.
 
 Scope, every action, one name each: `lane` (one you read), `source_type` (as `e_read` names it), `author` (agent profile that first wrote the record). `lane:x` in `match` is a label.
 
-Entries (not `changes` rows) carry `sr_id`, `lane`, `lane_uuid`, `source_type`, `version`, `author`, `ingested_at`, `properties`, a `preview`, `has_correction`/`has_adjustment`; full text via `e_read`. Pages cap entries (`page_size`) and characters; `remaining` counts the rest; next page: `page` + 1.
+Entries (not `changes` rows) carry `sr_id`, `lane`, `lane_uuid`, `source_type`, `version`, `author`, `ingested_at`, `properties`, a `preview`, `has_correction`/`has_adjustment`. `full=true`: `content` (full text) replaces `preview`. Pages cap entries (`page_size`) and characters; `remaining` counts the rest; next page: `page` + 1.
 
 `changes` — what changed between two moments, `since` and `as_of` (ISO date or datetime, a bare date midnight UTC; `as_of` defaults to now): each SR whose state differs, as `new`, `updated` (with what changed; `hidden_change` if outside your view), `deleted` or `undeleted`, with `author`, newest first, paged. `changed_at` is that SR's newest entry in the window. An SR changed and changed back, or written and deleted again, inside the window did not change. For later pages, pass the `as_of` that page 1 returned. Moments are original write times by the writing engine's clock, the same on every engine holding the same entries (a wrong clock misplaces its changes); deletion is local. Not a catch-up feed: an entry keeps its author's time and can arrive later, so a window already read can gain entries and reshuffle. For mesh arrivals use `e_audit(action="list", since_seq=N)`: each peer entry writes an `sr_synced` event.
 

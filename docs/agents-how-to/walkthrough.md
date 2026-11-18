@@ -66,7 +66,7 @@ e_gather {"action": "find", "query": "who owns the Acme renewal", "agent_profile
 ```
 
 ```json
-{"srs": [{"sr_id": "sr_7b22e4d1a90c3f5812ab94c6e0d3f7a1", "content": "Acme's renewal is due on 1 March 2027. Sarah owns it.", "distance": 0.24}], "page": 1, "total_pages": 1, "has_more": false}
+{"srs": [{"sr_id": "sr_7b22e4d1a90c3f5812ab94c6e0d3f7a1", "source_type": "documentary", "version": 0, "author": "restricted", "preview": "Acme's renewal is due on 1 March 2027. Sarah owns it.", "properties": ["org:Acme", "person:Sarah", "topic:renewal"], "ingested_at": "2026-10-30T15:02:11Z", "distance": 0.24, "lane": "default", "lane_uuid": "lane_…"}], "page": 1, "total_pages": 1, "has_more": false, "remaining": 0}
 ```
 
 Search found the record from a question that shares few of its words. See [search](finding-records.md).

@@ -30,9 +30,9 @@ Over MCP a refusal arrives as an error result (`isError`) whose text is the mess
 
 | Text |
 |---|
-| `… requires policy (the policy name)` |
-| `download requires policy (the policy name)` |
+| `… needs policy, a policy_name from e_policy list` |
+| `download needs policy, a policy_name from e_policy list` |
 | `no policy named '…'; have: …` |
-| `upload requires yaml (the policy document text)` |
+| `upload needs yaml, the policy document text in YAML, for example yaml: "{policy_name: crm, lanes: {crm: {}}, profiles: {}}"` |
 | `policy YAML must be a mapping (lanes / profiles / ...)` |
 | `invalid YAML: …` |

@@ -9,10 +9,10 @@ profile_v1:
   gather_find:
     components: [tokenize_query, tag_property_retrieve, tsquery_retrieve, semantic,
                  window_semantic, window_expand, true_distance_balanced_dedup,
-                 slice_page, load_srs, format_output]
+                 load_srs, slice_page_chars, format_output]
   # e_gather intersect, union and traverse.
   gather:
-    components: [gather_resolve, order_using_context, slice_page, load_srs, format_output]
+    components: [gather_resolve, order_using_context, load_srs, slice_page_chars, format_output]
   # e_timeline list, intersect and traverse; the question's dates are read by chrono.
   timeline:
     components: [temporal_parse_v2, tag_temporal_resolve, tag_temporal_shed,
@@ -42,8 +42,6 @@ profile_v1:
     tsquery: 5
   tag_temporal_resolve:
     ceiling: 200
-  slice_page:
-    page_size: 30
   slice_page_chars:
     page_size: 20
     max_chars: 8000
